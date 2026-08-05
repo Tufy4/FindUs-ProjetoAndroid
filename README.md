@@ -48,9 +48,10 @@ A movimentação dos veículos e a geração de telemetria são simuladas a part
 
 | Nome | Função/GitHub |
 |---|---|
-| — | — |
-| — | — |
-| — | — |
+| Tufy Elias | Tufy4 |
+| Miguel Henrique | Miguel-Henri |
+| Pedro Aguiar | duxpe’s |
+| Natan Araujo | natanaraujo3001 |
 
 ## Estrutura do repositório
 
@@ -58,7 +59,7 @@ A movimentação dos veículos e a geração de telemetria são simuladas a part
 /
 ├── app/                # código-fonte do aplicativo Android
 ├── docs/                # documentação (relatórios, PoCs, apresentações)
-├── poc/                 # provas de conceito desenvolvidas ao longo do projeto
+├── pocs/                 # provas de conceito desenvolvidas ao longo do projeto
 └── README.md
 ```
 
