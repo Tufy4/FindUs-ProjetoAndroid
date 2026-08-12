@@ -30,8 +30,9 @@ fun TelaLogin() {
     var email by remember { mutableStateOf("") }
     var senha by remember { mutableStateOf("") }
     var status by remember { mutableStateOf("") }
+    var carregando by remember { mutableStateOf(false) }
 
-    val auth = FirebaseAuth.getInstance()
+    val auth = remember { FirebaseAuth.getInstance() }
 
     Column(
         modifier = Modifier
@@ -72,13 +73,16 @@ fun TelaLogin() {
             modifier = Modifier.fillMaxWidth()
         ) {
             Button(
+                enabled = !carregando,
                 onClick = {
                     if (email.isBlank() || senha.isBlank()) {
                         status = "Preencha e-mail e senha"
                         return@Button
                     }
+                    carregando = true
                     auth.createUserWithEmailAndPassword(email, senha)
                         .addOnCompleteListener { task ->
+                            carregando = false
                             status = if (task.isSuccessful) {
                                 "Conta criada! Usuário: ${auth.currentUser?.email}"
                             } else {
@@ -92,13 +96,16 @@ fun TelaLogin() {
             }
 
             Button(
+                enabled = !carregando,
                 onClick = {
                     if (email.isBlank() || senha.isBlank()) {
                         status = "Preencha e-mail e senha"
                         return@Button
                     }
+                    carregando = true
                     auth.signInWithEmailAndPassword(email, senha)
                         .addOnCompleteListener { task ->
+                            carregando = false
                             status = if (task.isSuccessful) {
                                 "Login feito! Usuário: ${auth.currentUser?.email}"
                             } else {
@@ -110,6 +117,11 @@ fun TelaLogin() {
             ) {
                 Text("Entrar")
             }
+        }
+
+        if (carregando) {
+            Spacer(modifier = Modifier.height(16.dp))
+            CircularProgressIndicator()
         }
 
         if (status.isNotBlank()) {
