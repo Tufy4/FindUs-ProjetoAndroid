@@ -1,0 +1,3 @@
+<resources>
+    <style name="Theme.E3Sync" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
