@@ -1,10 +1,13 @@
 package com.example.findus.ui.controlador.mapa
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -30,6 +33,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -41,13 +45,11 @@ import com.example.findus.FindUsApplication
 import com.example.findus.data.enum.EstadoPortas
 import com.example.findus.data.local.entity.RegistroTelemetriaEntity
 import com.example.findus.data.local.entity.VeiculoEntity
+import com.example.findus.location.Coordenada
+import com.example.findus.ui.common.FotoVeiculo
 import com.example.findus.location.TipoEventoGeofence
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.Marker
-import com.google.maps.android.compose.MarkerState
-import com.google.maps.android.compose.rememberCameraPositionState
+import com.example.findus.ui.map.MapaOsm
+import com.example.findus.ui.map.MarcadorMapa
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -60,7 +62,7 @@ fun MapaControladorScreen(onVoltar: () -> Unit, onVerRota: (Long) -> Unit) {
                 veiculoRepository = app.container.veiculoRepository,
                 telemetriaRepository = app.container.telemetriaRepository,
                 telemetriaSimuladorManager = app.container.telemetriaSimuladorManager,
-                geofenceMonitor = app.container.geofenceMonitor,
+                geofenceNotificador = app.container.geofenceNotificador,
                 reverseGeocoder = app.container.reverseGeocoder
             )
         }
@@ -94,25 +96,26 @@ fun MapaControladorScreen(onVoltar: () -> Unit, onVerRota: (Long) -> Unit) {
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            val cameraPositionState = rememberCameraPositionState {
-                position = CameraPosition.fromLatLngZoom(LatLng(-23.2237, -45.8937), 12f)
+            val marcadores = telemetrias.map { registro ->
+                val veiculo = veiculos.find { it.id == registro.veiculoId }
+                MarcadorMapa(
+                    posicao = Coordenada(registro.latitude, registro.longitude),
+                    titulo = veiculo?.placa ?: "Veículo ${registro.veiculoId}",
+                    descricao = "${registro.velocidade} km/h · ${registro.estadoPortas}",
+                    corHex = if (registro.velocidade > 0.0) "#2E7D32" else "#C62828",
+                    onClick = {
+                        veiculoSelecionado = veiculo
+                        viewModel.consultarEndereco(registro.latitude, registro.longitude)
+                    }
+                )
             }
             Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                GoogleMap(modifier = Modifier.fillMaxSize(), cameraPositionState = cameraPositionState) {
-                    telemetrias.forEach { registro ->
-                        val veiculo = veiculos.find { it.id == registro.veiculoId }
-                        Marker(
-                            state = MarkerState(LatLng(registro.latitude, registro.longitude)),
-                            title = veiculo?.placa ?: "Veículo ${registro.veiculoId}",
-                            snippet = "${registro.velocidade} km/h · ${registro.estadoPortas}",
-                            onClick = {
-                                veiculoSelecionado = veiculo
-                                viewModel.consultarEndereco(registro.latitude, registro.longitude)
-                                false
-                            }
-                        )
-                    }
-                }
+                MapaOsm(
+                    marcadores = marcadores,
+                    modifier = Modifier.fillMaxSize(),
+                    centro = marcadores.firstOrNull()?.posicao,
+                    zoom = 12.0
+                )
             }
 
             Divider()
@@ -161,7 +164,13 @@ private fun LinhaTelemetriaVeiculo(
 ) {
     Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)) {
         Column(Modifier.padding(12.dp)) {
-            Text("${veiculo.placa} · ${veiculo.modelo}", style = MaterialTheme.typography.titleMedium)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                FotoVeiculo(veiculo.fotoUri, Modifier.size(56.dp))
+                Text("${veiculo.placa} · ${veiculo.modelo}", style = MaterialTheme.typography.titleMedium)
+            }
             if (telemetria != null) {
                 Text(
                     "Velocidade: ${telemetria.velocidade} km/h · Portas: ${if (telemetria.estadoPortas == EstadoPortas.ABERTA) "abertas" else "fechadas"} · Motor: ${if (telemetria.motorLigado) "ligado" else "desligado"}",

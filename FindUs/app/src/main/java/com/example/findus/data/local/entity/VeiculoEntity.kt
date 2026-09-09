@@ -5,6 +5,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.example.findus.data.enum.StatusOperacionalVeiculo
 import com.example.findus.data.enum.TipoVeiculo
+import java.util.UUID
 
 @Entity(
     tableName = "veiculos",
@@ -17,5 +18,10 @@ data class VeiculoEntity(
     val modelo: String,
     val tipo: TipoVeiculo,
     val fotoUri: String? = null,
-    val status: StatusOperacionalVeiculo = StatusOperacionalVeiculo.DISPONIVEL
+    val status: StatusOperacionalVeiculo = StatusOperacionalVeiculo.DISPONIVEL,
+    val syncId: String = UUID.randomUUID().toString(),
+    val atualizadoEm: Long = System.currentTimeMillis(),
+    val pendenteSync: Boolean = true,
+    val deletado: Boolean = false,
+    val fotoSincronizada: Boolean = false
 )

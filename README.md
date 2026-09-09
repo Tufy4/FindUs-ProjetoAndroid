@@ -29,12 +29,12 @@ Aplicativo Android para monitoramento de uma frota de veículos de entrega (cami
 | Plataforma | Android (Kotlin) |
 | Autenticação | Firebase Auth |
 | Banco em nuvem | Firebase Firestore |
-| Armazenamento de fotos (nuvem) | Firebase Storage |
+| Armazenamento de fotos (nuvem) | Firestore (imagem em Base64) |
 | Persistência local | SQLite / Room |
 | Armazenamento local de fotos | Filesystem do dispositivo |
-| Mapas | Google Maps *(ou OpenStreetMap — definir)* |
-| Geocoding | Google Geocoding API *(ou Nominatim — conforme escolha de mapa)* |
-| Geofencing | Android Geofencing API |
+| Mapas | osmdroid + tiles Geoapify (OpenStreetMap) |
+| Geocoding | Android Geocoder (reverse) · Geoapify (rotas) |
+| Geofencing | Cálculo de distância + notificação do sistema |
 
 ## Arquitetura de dados
 
