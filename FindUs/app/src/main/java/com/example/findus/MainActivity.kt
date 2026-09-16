@@ -17,13 +17,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.findus.ui.navigation.FindUsNavHost
+import com.example.findus.ui.theme.FindUsTheme
 import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MaterialTheme {
+            FindUsTheme(darkTheme = true, dynamicColor = false) {
                 val pedirNotificacao = rememberLauncherForActivityResult(
                     ActivityResultContracts.RequestPermission()
                 ) { }
@@ -34,10 +35,17 @@ class MainActivity : ComponentActivity() {
                 }
 
                 var autenticado by remember { mutableStateOf(FirebaseAuth.getInstance().currentUser != null) }
-                if (autenticado) {
-                    FindUsNavHost()
-                } else {
-                    TelaLogin(onAutenticado = { autenticado = true })
+                Surface(modifier = Modifier.fillMaxSize()) {
+                    if (autenticado) {
+                        FindUsNavHost(
+                            onSair = {
+                                FirebaseAuth.getInstance().signOut()
+                                autenticado = false
+                            }
+                        )
+                    } else {
+                        TelaLogin(onAutenticado = { autenticado = true })
+                    }
                 }
             }
         }

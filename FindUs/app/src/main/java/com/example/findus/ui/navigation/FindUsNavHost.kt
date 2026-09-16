@@ -34,12 +34,13 @@ private object Rotas {
 }
 
 @Composable
-fun FindUsNavHost(navController: NavHostController = rememberNavController()) {
+fun FindUsNavHost(onSair: () -> Unit, navController: NavHostController = rememberNavController()) {
     NavHost(navController = navController, startDestination = Rotas.SELECAO_PERFIL) {
         composable(Rotas.SELECAO_PERFIL) {
             PerfilSelectScreen(
                 onEscolherMotorista = { navController.navigate(Rotas.MOTORISTA_HOME) },
-                onEscolherControlador = { navController.navigate(Rotas.CONTROLADOR_HOME) }
+                onEscolherControlador = { navController.navigate(Rotas.CONTROLADOR_HOME) },
+                onSair = onSair
             )
         }
 
