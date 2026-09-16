@@ -54,7 +54,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MapaControladorScreen(onVoltar: () -> Unit, onVerRota: (Long) -> Unit) {
+fun MapaControladorScreen(onVoltar: () -> Unit, onVerRota: (String) -> Unit) {
     val app = LocalContext.current.applicationContext as FindUsApplication
     val viewModel: ControladorViewModel = viewModel(factory = viewModelFactory {
         initializer {
@@ -168,7 +168,7 @@ private fun LinhaTelemetriaVeiculo(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                FotoVeiculo(veiculo.fotoUri, Modifier.size(56.dp))
+                FotoVeiculo(veiculo.fotoBase64, Modifier.size(56.dp))
                 Text("${veiculo.placa} · ${veiculo.modelo}", style = MaterialTheme.typography.titleMedium)
             }
             if (telemetria != null) {

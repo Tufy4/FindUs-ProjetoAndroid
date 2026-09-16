@@ -27,7 +27,7 @@ import com.example.findus.data.local.entity.VeiculoEntity
         MotoristaEntity::class,
         AvaliacaoProdutoEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

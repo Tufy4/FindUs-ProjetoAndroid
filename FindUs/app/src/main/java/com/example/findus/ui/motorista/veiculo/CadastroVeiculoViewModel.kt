@@ -14,7 +14,7 @@ class CadastroVeiculoViewModel(private val repository: VeiculoRepository) : View
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun salvar(veiculo: VeiculoEntity) = viewModelScope.launch {
-        if (veiculo.id == 0L) repository.salvar(veiculo) else repository.atualizar(veiculo)
+        repository.salvar(veiculo)
     }
 
     fun remover(veiculo: VeiculoEntity) = viewModelScope.launch { repository.remover(veiculo) }

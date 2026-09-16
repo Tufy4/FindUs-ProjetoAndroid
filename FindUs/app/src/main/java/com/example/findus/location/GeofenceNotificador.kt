@@ -39,6 +39,6 @@ class GeofenceNotificador(private val context: Context) {
             .setAutoCancel(true)
             .build()
 
-        NotificationManagerCompat.from(context).notify(evento.veiculoId.toInt(), notificacao)
+        NotificationManagerCompat.from(context).notify(evento.veiculoId.hashCode(), notificacao)
     }
 }

@@ -2,14 +2,20 @@ package com.example.findus.di
 
 import android.content.Context
 import com.example.findus.data.local.AppDatabase
-import com.example.findus.data.remote.VeiculoRemoteDataSource
+import com.example.findus.data.local.entity.AvaliacaoProdutoEntity
+import com.example.findus.data.local.entity.MotoristaEntity
+import com.example.findus.data.local.entity.NegocianteEntity
+import com.example.findus.data.local.entity.ProdutoEntity
+import com.example.findus.data.local.entity.RegistroTelemetriaEntity
+import com.example.findus.data.local.entity.VeiculoEntity
+import com.example.findus.data.remote.FirestoreColecao
 import com.example.findus.data.repository.AvaliacaoProdutoRepository
 import com.example.findus.data.repository.MotoristaRepository
 import com.example.findus.data.repository.NegocianteRepository
 import com.example.findus.data.repository.ProdutoRepository
 import com.example.findus.data.repository.TelemetriaRepository
 import com.example.findus.data.repository.VeiculoRepository
-import com.example.findus.data.sync.VeiculoSync
+import com.example.findus.data.sync.sincronizar
 import com.example.findus.location.GeofenceMonitor
 import com.example.findus.location.GeofenceNotificador
 import com.example.findus.location.LocationHelper
@@ -18,6 +24,7 @@ import com.example.findus.location.RotaService
 import com.example.findus.location.Geofence
 import com.example.findus.telemetry.RotasSimuladas
 import com.example.findus.telemetry.TelemetriaSimuladorManager
+import com.google.firebase.firestore.Query
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -28,21 +35,21 @@ class AppContainer(context: Context) {
 
     private val database = AppDatabase.getInstance(context)
 
-    private val veiculoRemoteDataSource = VeiculoRemoteDataSource()
+    private val veiculosRemoto = FirestoreColecao("veiculos", VeiculoEntity::class.java)
+    private val produtosRemoto = FirestoreColecao("produtos", ProdutoEntity::class.java)
+    private val negociantesRemoto = FirestoreColecao("negociantes", NegocianteEntity::class.java)
+    private val motoristasRemoto = FirestoreColecao("motoristas", MotoristaEntity::class.java)
+    private val avaliacoesRemoto = FirestoreColecao("avaliacoes_produto", AvaliacaoProdutoEntity::class.java)
+    private val telemetriasRemoto = FirestoreColecao("registros_telemetria", RegistroTelemetriaEntity::class.java) {
+        it.orderBy("timestamp", Query.Direction.DESCENDING).limit(100)
+    }
 
-    private val veiculoSync = VeiculoSync(
-        context = context.applicationContext,
-        dao = database.veiculoDao(),
-        remoto = veiculoRemoteDataSource,
-        escopo = escopoApp
-    )
-
-    val veiculoRepository = VeiculoRepository(database.veiculoDao(), veiculoSync)
-    val telemetriaRepository = TelemetriaRepository(database.registroTelemetriaDao())
-    val produtoRepository = ProdutoRepository(database.produtoDao())
-    val negocianteRepository = NegocianteRepository(database.negocianteDao())
-    val motoristaRepository = MotoristaRepository(database.motoristaDao())
-    val avaliacaoProdutoRepository = AvaliacaoProdutoRepository(database.avaliacaoProdutoDao())
+    val veiculoRepository = VeiculoRepository(database.veiculoDao(), veiculosRemoto)
+    val telemetriaRepository = TelemetriaRepository(database.registroTelemetriaDao(), telemetriasRemoto)
+    val produtoRepository = ProdutoRepository(database.produtoDao(), produtosRemoto)
+    val negocianteRepository = NegocianteRepository(database.negocianteDao(), negociantesRemoto)
+    val motoristaRepository = MotoristaRepository(database.motoristaDao(), motoristasRemoto)
+    val avaliacaoProdutoRepository = AvaliacaoProdutoRepository(database.avaliacaoProdutoDao(), avaliacoesRemoto)
 
     val telemetriaSimuladorManager = TelemetriaSimuladorManager(
         veiculoRepository = veiculoRepository,
@@ -65,7 +72,13 @@ class AppContainer(context: Context) {
     val geofenceNotificador = GeofenceNotificador(context.applicationContext)
 
     init {
-        veiculoSync.iniciar()
+        escopoApp.sincronizar(veiculosRemoto) { database.veiculoDao().inserirTodos(it) }
+        escopoApp.sincronizar(produtosRemoto) { database.produtoDao().inserirTodos(it) }
+        escopoApp.sincronizar(negociantesRemoto) { database.negocianteDao().inserirTodos(it) }
+        escopoApp.sincronizar(motoristasRemoto) { database.motoristaDao().inserirTodos(it) }
+        escopoApp.sincronizar(avaliacoesRemoto) { database.avaliacaoProdutoDao().inserirTodas(it) }
+        escopoApp.sincronizar(telemetriasRemoto) { database.registroTelemetriaDao().inserirTodos(it) }
+
         escopoApp.launch {
             telemetriaRepository.observarUltimoPorVeiculo().collect { registros ->
                 registros.forEach { registro ->

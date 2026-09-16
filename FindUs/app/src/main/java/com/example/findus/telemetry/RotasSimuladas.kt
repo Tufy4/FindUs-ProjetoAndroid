@@ -10,8 +10,8 @@ import com.example.findus.data.enum.EstadoPortas
 object RotasSimuladas {
     val centroDistribuicao = 23.2237 to 45.8937 // São José dos Campos (lat/lon positivos, sinal aplicado abaixo)
 
-    fun trajetoPadrao(veiculoId: Long): List<PontoRota> {
-        val offset = (veiculoId % 5) * 0.004
+    fun trajetoPadrao(veiculoId: String): List<PontoRota> {
+        val offset = (veiculoId.hashCode() % 5) * 0.004
         val origemLat = -23.2237 - offset
         val origemLon = -45.8937 - offset
         val destinoLat = -23.1791 - offset

@@ -6,7 +6,7 @@ data class Geofence(val centroLat: Double, val centroLon: Double, val raioMetros
 
 enum class TipoEventoGeofence { ENTROU, SAIU }
 
-data class EventoGeofence(val veiculoId: Long, val tipo: TipoEventoGeofence, val distanciaMetros: Float)
+data class EventoGeofence(val veiculoId: String, val tipo: TipoEventoGeofence, val distanciaMetros: Float)
 
 /**
  * Simula geofencing calculando a distância do veículo até o centro do
@@ -14,9 +14,9 @@ data class EventoGeofence(val veiculoId: Long, val tipo: TipoEventoGeofence, val
  * Geofencing API do Play Services (mais simples de reproduzir em uma PoC).
  */
 class GeofenceMonitor(private val geofence: Geofence) {
-    private val dentroDoPerimetro = mutableMapOf<Long, Boolean>()
+    private val dentroDoPerimetro = mutableMapOf<String, Boolean>()
 
-    fun avaliar(veiculoId: Long, latitude: Double, longitude: Double): EventoGeofence? {
+    fun avaliar(veiculoId: String, latitude: Double, longitude: Double): EventoGeofence? {
         val resultado = FloatArray(1)
         Location.distanceBetween(geofence.centroLat, geofence.centroLon, latitude, longitude, resultado)
         val distancia = resultado[0]

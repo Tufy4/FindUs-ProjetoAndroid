@@ -30,7 +30,7 @@ private object Rotas {
     const val CONTROLADOR_MAPA = "controlador_mapa"
     const val CONTROLADOR_MOTORISTAS = "controlador_motoristas"
     const val CONTROLADOR_ROTA = "controlador_rota/{veiculoId}"
-    fun controladorRota(veiculoId: Long) = "controlador_rota/$veiculoId"
+    fun controladorRota(veiculoId: String) = "controlador_rota/$veiculoId"
 }
 
 @Composable
@@ -75,9 +75,9 @@ fun FindUsNavHost(navController: NavHostController = rememberNavController()) {
         }
         composable(
             Rotas.CONTROLADOR_ROTA,
-            arguments = listOf(navArgument("veiculoId") { type = NavType.LongType })
+            arguments = listOf(navArgument("veiculoId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val veiculoId = backStackEntry.arguments?.getLong("veiculoId") ?: 0L
+            val veiculoId = backStackEntry.arguments?.getString("veiculoId").orEmpty()
             RotaVeiculoScreen(veiculoId = veiculoId, onVoltar = { navController.popBackStack() })
         }
     }

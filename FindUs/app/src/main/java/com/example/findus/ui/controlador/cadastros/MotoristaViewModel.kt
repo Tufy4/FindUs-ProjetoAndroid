@@ -22,7 +22,7 @@ class MotoristaViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun salvar(motorista: MotoristaEntity) = viewModelScope.launch {
-        if (motorista.id == 0L) motoristaRepository.salvar(motorista) else motoristaRepository.atualizar(motorista)
+        motoristaRepository.salvar(motorista)
     }
 
     fun remover(motorista: MotoristaEntity) = viewModelScope.launch { motoristaRepository.remover(motorista) }

@@ -33,11 +33,11 @@ class ControladorViewModel(
     private val _enderecoSelecionado = MutableStateFlow<String?>(null)
     val enderecoSelecionado: StateFlow<String?> = _enderecoSelecionado
 
-    fun iniciarSimulacao(veiculoId: Long) = telemetriaSimuladorManager.iniciar(veiculoId)
+    fun iniciarSimulacao(veiculoId: String) = telemetriaSimuladorManager.iniciar(veiculoId)
 
-    fun pararSimulacao(veiculoId: Long) = telemetriaSimuladorManager.parar(veiculoId)
+    fun pararSimulacao(veiculoId: String) = telemetriaSimuladorManager.parar(veiculoId)
 
-    fun simulacaoAtiva(veiculoId: Long) = telemetriaSimuladorManager.estaAtivo(veiculoId)
+    fun simulacaoAtiva(veiculoId: String) = telemetriaSimuladorManager.estaAtivo(veiculoId)
 
     fun consultarEndereco(latitude: Double, longitude: Double) = viewModelScope.launch {
         _enderecoSelecionado.value = reverseGeocoder.endereco(latitude, longitude)

@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class RotaVeiculoViewModel(
-    veiculoId: Long,
+    veiculoId: String,
     telemetriaRepository: TelemetriaRepository,
     private val locationHelper: LocationHelper,
     private val rotaService: RotaService

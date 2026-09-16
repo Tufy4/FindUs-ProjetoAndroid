@@ -34,7 +34,7 @@ import com.example.findus.ui.map.MarcadorMapa
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RotaVeiculoScreen(veiculoId: Long, onVoltar: () -> Unit) {
+fun RotaVeiculoScreen(veiculoId: String, onVoltar: () -> Unit) {
     val context = LocalContext.current
     val app = context.applicationContext as FindUsApplication
     val viewModel: RotaVeiculoViewModel = viewModel(factory = viewModelFactory {

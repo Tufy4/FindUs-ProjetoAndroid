@@ -9,19 +9,15 @@ import java.util.UUID
 
 @Entity(
     tableName = "veiculos",
-    indices = [Index(value = ["placa"], unique = true)]
+    indices = [Index(value = ["placa"])]
 )
 data class VeiculoEntity(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
-    val placa: String,
-    val modelo: String,
-    val tipo: TipoVeiculo,
-    val fotoUri: String? = null,
+    @PrimaryKey
+    val id: String = UUID.randomUUID().toString(),
+    val placa: String = "",
+    val modelo: String = "",
+    val tipo: TipoVeiculo = TipoVeiculo.CAMINHAO,
+    val fotoBase64: String? = null,
     val status: StatusOperacionalVeiculo = StatusOperacionalVeiculo.DISPONIVEL,
-    val syncId: String = UUID.randomUUID().toString(),
-    val atualizadoEm: Long = System.currentTimeMillis(),
-    val pendenteSync: Boolean = true,
-    val deletado: Boolean = false,
-    val fotoSincronizada: Boolean = false
+    val deletado: Boolean = false
 )

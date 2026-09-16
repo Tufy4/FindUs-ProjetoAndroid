@@ -2,7 +2,6 @@ package com.example.findus.ui.motorista.veiculo
 
 import android.Manifest
 import android.net.Uri
-import android.widget.ImageView
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -46,6 +45,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.findus.FindUsApplication
+import com.example.findus.camera.FotoBase64
 import com.example.findus.camera.FotoCaptureUtils
 import com.example.findus.data.enum.StatusOperacionalVeiculo
 import com.example.findus.data.enum.TipoVeiculo
@@ -68,11 +68,11 @@ fun CadastroVeiculoScreen(onVoltar: () -> Unit) {
     var modelo by remember { mutableStateOf("") }
     var tipo by remember { mutableStateOf(TipoVeiculo.CAMINHAO) }
     var status by remember { mutableStateOf(StatusOperacionalVeiculo.DISPONIVEL) }
-    var fotoUri by remember { mutableStateOf<Uri?>(null) }
+    var fotoBase64 by remember { mutableStateOf<String?>(null) }
     var uriPendente by remember { mutableStateOf<Uri?>(null) }
 
     val lancadorCamera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { sucesso ->
-        if (sucesso) fotoUri = uriPendente
+        if (sucesso) fotoBase64 = uriPendente?.let { FotoBase64.paraBase64(context, it) }
     }
     val lancadorPermissaoCamera = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedida ->
         if (concedida) {
@@ -84,7 +84,7 @@ fun CadastroVeiculoScreen(onVoltar: () -> Unit) {
 
     fun limparFormulario() {
         veiculoEmEdicao = null; placa = ""; modelo = ""; tipo = TipoVeiculo.CAMINHAO
-        status = StatusOperacionalVeiculo.DISPONIVEL; fotoUri = null
+        status = StatusOperacionalVeiculo.DISPONIVEL; fotoBase64 = null
     }
 
     Scaffold(
@@ -111,15 +111,9 @@ fun CadastroVeiculoScreen(onVoltar: () -> Unit) {
                 EnumDropdown("Status", StatusOperacionalVeiculo.entries.toTypedArray(), status, { status = it }, Modifier.fillMaxWidth())
 
                 OutlinedButton(onClick = { lancadorPermissaoCamera.launch(Manifest.permission.CAMERA) }) {
-                    Text(if (fotoUri == null) "Tirar foto do veículo" else "Tirar outra foto")
+                    Text(if (fotoBase64 == null) "Tirar foto do veículo" else "Tirar outra foto")
                 }
-                fotoUri?.let { uri ->
-                    AndroidView(
-                        factory = { ctx -> ImageView(ctx) },
-                        update = { it.setImageURI(uri) },
-                        modifier = Modifier.fillMaxWidth().height(180.dp)
-                    )
-                }
+                FotoVeiculo(fotoBase64, Modifier.fillMaxWidth().height(180.dp))
 
                 Button(
                     onClick = {
@@ -128,12 +122,12 @@ fun CadastroVeiculoScreen(onVoltar: () -> Unit) {
                             modelo = modelo,
                             tipo = tipo,
                             status = status,
-                            fotoUri = fotoUri?.toString()
+                            fotoBase64 = fotoBase64
                         ) ?: VeiculoEntity(
                             placa = placa,
                             modelo = modelo,
                             tipo = tipo,
-                            fotoUri = fotoUri?.toString(),
+                            fotoBase64 = fotoBase64,
                             status = status
                         )
                         viewModel.salvar(entidade)
@@ -155,7 +149,7 @@ fun CadastroVeiculoScreen(onVoltar: () -> Unit) {
                             modelo = veiculo.modelo
                             tipo = veiculo.tipo
                             status = veiculo.status
-                            fotoUri = veiculo.fotoUri?.let { Uri.parse(it) }
+                            fotoBase64 = veiculo.fotoBase64
                         }
                     ) {
                         Row(
@@ -163,7 +157,7 @@ fun CadastroVeiculoScreen(onVoltar: () -> Unit) {
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            FotoVeiculo(veiculo.fotoUri, Modifier.size(64.dp))
+                            FotoVeiculo(veiculo.fotoBase64, Modifier.size(64.dp))
                             Column {
                                 Text("${veiculo.placa} · ${veiculo.modelo}", style = MaterialTheme.typography.titleMedium)
                                 Text("${veiculo.tipo} · ${veiculo.status}", style = MaterialTheme.typography.bodySmall)

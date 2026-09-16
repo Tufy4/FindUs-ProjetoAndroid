@@ -45,6 +45,7 @@ import com.example.findus.data.local.entity.ProdutoEntity
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -145,7 +146,7 @@ private fun AvaliacaoFormDialog(
             Button(onClick = {
                 onSalvar(
                     AvaliacaoProdutoEntity(
-                        id = avaliacao?.id ?: 0,
+                        id = avaliacao?.id ?: UUID.randomUUID().toString(),
                         produtoId = produtoSelecionado.id,
                         nota = nota.toIntOrNull()?.coerceIn(1, 5) ?: 5,
                         comentario = comentario.ifBlank { null },
