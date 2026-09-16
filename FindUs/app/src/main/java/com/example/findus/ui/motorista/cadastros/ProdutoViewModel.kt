@@ -14,7 +14,7 @@ class ProdutoViewModel(private val repository: ProdutoRepository) : ViewModel() 
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun salvar(produto: ProdutoEntity) = viewModelScope.launch {
-        if (produto.id == 0L) repository.salvar(produto) else repository.atualizar(produto)
+        repository.salvar(produto)
     }
 
     fun remover(produto: ProdutoEntity) = viewModelScope.launch { repository.remover(produto) }

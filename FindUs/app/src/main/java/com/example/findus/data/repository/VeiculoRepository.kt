@@ -3,21 +3,23 @@ package com.example.findus.data.repository
 import com.example.findus.data.enum.StatusOperacionalVeiculo
 import com.example.findus.data.local.dao.VeiculoDao
 import com.example.findus.data.local.entity.VeiculoEntity
+import com.example.findus.data.remote.FirestoreColecao
 import kotlinx.coroutines.flow.Flow
 
-class VeiculoRepository(private val dao: VeiculoDao) {
+class VeiculoRepository(
+    private val dao: VeiculoDao,
+    private val remoto: FirestoreColecao<VeiculoEntity>
+) {
     fun observarTodos(): Flow<List<VeiculoEntity>> = dao.observarTodos()
 
-    fun observarPorId(id: Long): Flow<VeiculoEntity?> = dao.observarPorId(id)
+    suspend fun salvar(veiculo: VeiculoEntity) {
+        dao.inserir(veiculo)
+        remoto.enviar(veiculo.id, veiculo)
+    }
 
-    suspend fun buscarPorId(id: Long): VeiculoEntity? = dao.buscarPorId(id)
+    suspend fun remover(veiculo: VeiculoEntity) = salvar(veiculo.copy(deletado = true))
 
-    suspend fun salvar(veiculo: VeiculoEntity): Long = dao.inserir(veiculo)
-
-    suspend fun atualizar(veiculo: VeiculoEntity) = dao.atualizar(veiculo)
-
-    suspend fun remover(veiculo: VeiculoEntity) = dao.remover(veiculo)
-
-    suspend fun atualizarStatus(veiculoId: Long, status: StatusOperacionalVeiculo) =
-        dao.atualizarStatus(veiculoId, status)
+    suspend fun atualizarStatus(veiculoId: String, status: StatusOperacionalVeiculo) {
+        dao.buscarPorId(veiculoId)?.let { salvar(it.copy(status = status)) }
+    }
 }

@@ -11,7 +11,7 @@ import kotlinx.coroutines.delay
  * ponto no Room, simulando o rastreamento em tempo real de um veículo.
  */
 class TelemetriaSimulador(
-    private val veiculoId: Long,
+    private val veiculoId: String,
     private val trajeto: List<PontoRota>,
     private val veiculoRepository: VeiculoRepository,
     private val telemetriaRepository: TelemetriaRepository,

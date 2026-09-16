@@ -28,24 +28,28 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.findus.FindUsApplication
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.Marker
-import com.google.maps.android.compose.MarkerState
-import com.google.maps.android.compose.Polyline
-import com.google.maps.android.compose.rememberCameraPositionState
+import com.example.findus.location.Coordenada
+import com.example.findus.ui.map.MapaOsm
+import com.example.findus.ui.map.MarcadorMapa
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RotaVeiculoScreen(veiculoId: Long, onVoltar: () -> Unit) {
+fun RotaVeiculoScreen(veiculoId: String, onVoltar: () -> Unit) {
     val context = LocalContext.current
     val app = context.applicationContext as FindUsApplication
     val viewModel: RotaVeiculoViewModel = viewModel(factory = viewModelFactory {
-        initializer { RotaVeiculoViewModel(veiculoId, app.container.telemetriaRepository, app.container.locationHelper) }
+        initializer {
+            RotaVeiculoViewModel(
+                veiculoId,
+                app.container.telemetriaRepository,
+                app.container.locationHelper,
+                app.container.rotaService
+            )
+        }
     })
     val posicaoVeiculo by viewModel.posicaoVeiculo.collectAsStateWithLifecycle()
     val posicaoControlador by viewModel.posicaoControlador.collectAsStateWithLifecycle()
+    val rota by viewModel.rota.collectAsStateWithLifecycle()
 
     val lancadorPermissao = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedida ->
         if (concedida) viewModel.atualizarLocalizacaoControlador()
@@ -61,19 +65,17 @@ fun RotaVeiculoScreen(veiculoId: Long, onVoltar: () -> Unit) {
         }
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-            val destino = posicaoVeiculo?.let { LatLng(it.latitude, it.longitude) }
-            val origem = posicaoControlador?.let { LatLng(it.latitude, it.longitude) }
-            val cameraPositionState = rememberCameraPositionState {
-                position = CameraPosition.fromLatLngZoom(destino ?: LatLng(-23.2237, -45.8937), 13f)
-            }
+            val destino = posicaoVeiculo?.let { Coordenada(it.latitude, it.longitude) }
+            val marcadores = mutableListOf<MarcadorMapa>()
+            destino?.let { marcadores.add(MarcadorMapa(posicao = it, titulo = "Veículo", corHex = "#C62828")) }
+            posicaoControlador?.let { marcadores.add(MarcadorMapa(posicao = it, titulo = "Sua posição")) }
 
-            GoogleMap(modifier = Modifier.fillMaxSize(), cameraPositionState = cameraPositionState) {
-                destino?.let { Marker(state = MarkerState(it), title = "Veículo") }
-                origem?.let { pontoOrigem ->
-                    Marker(state = MarkerState(pontoOrigem), title = "Sua posição")
-                    if (destino != null) Polyline(points = listOf(pontoOrigem, destino))
-                }
-            }
+            MapaOsm(
+                marcadores = marcadores,
+                modifier = Modifier.fillMaxSize(),
+                linha = rota,
+                centro = destino ?: posicaoControlador
+            )
 
             if (destino == null) {
                 Surface(

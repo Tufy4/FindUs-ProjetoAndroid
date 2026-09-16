@@ -10,10 +10,13 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface RegistroTelemetriaDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun inserir(registro: RegistroTelemetriaEntity): Long
+    suspend fun inserir(registro: RegistroTelemetriaEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun inserirTodos(registros: List<RegistroTelemetriaEntity>)
 
     @Query("SELECT * FROM registros_telemetria WHERE veiculoId = :veiculoId ORDER BY timestamp DESC LIMIT 1")
-    fun observarUltimoDoVeiculo(veiculoId: Long): Flow<RegistroTelemetriaEntity?>
+    fun observarUltimoDoVeiculo(veiculoId: String): Flow<RegistroTelemetriaEntity?>
 
     @Query(
         """
@@ -26,7 +29,4 @@ interface RegistroTelemetriaDao {
         """
     )
     fun observarUltimoPorVeiculo(): Flow<List<RegistroTelemetriaEntity>>
-
-    @Query("SELECT * FROM registros_telemetria WHERE veiculoId = :veiculoId ORDER BY timestamp ASC")
-    fun observarHistoricoDoVeiculo(veiculoId: Long): Flow<List<RegistroTelemetriaEntity>>
 }

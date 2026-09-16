@@ -22,7 +22,7 @@ class AvaliacaoProdutoViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun salvar(avaliacao: AvaliacaoProdutoEntity) = viewModelScope.launch {
-        if (avaliacao.id == 0L) avaliacaoRepository.salvar(avaliacao) else avaliacaoRepository.atualizar(avaliacao)
+        avaliacaoRepository.salvar(avaliacao)
     }
 
     fun remover(avaliacao: AvaliacaoProdutoEntity) = viewModelScope.launch { avaliacaoRepository.remover(avaliacao) }

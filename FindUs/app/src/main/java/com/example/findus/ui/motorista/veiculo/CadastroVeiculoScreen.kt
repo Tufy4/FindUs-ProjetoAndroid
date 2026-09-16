@@ -2,7 +2,6 @@ package com.example.findus.ui.motorista.veiculo
 
 import android.Manifest
 import android.net.Uri
-import android.widget.ImageView
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -10,7 +9,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -34,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -43,11 +45,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.findus.FindUsApplication
+import com.example.findus.camera.FotoBase64
 import com.example.findus.camera.FotoCaptureUtils
 import com.example.findus.data.enum.StatusOperacionalVeiculo
 import com.example.findus.data.enum.TipoVeiculo
 import com.example.findus.data.local.entity.VeiculoEntity
 import com.example.findus.ui.common.EnumDropdown
+import com.example.findus.ui.common.FotoVeiculo
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,16 +63,16 @@ fun CadastroVeiculoScreen(onVoltar: () -> Unit) {
     })
     val veiculos by viewModel.veiculos.collectAsStateWithLifecycle()
 
-    var editandoId by remember { mutableStateOf(0L) }
+    var veiculoEmEdicao by remember { mutableStateOf<VeiculoEntity?>(null) }
     var placa by remember { mutableStateOf("") }
     var modelo by remember { mutableStateOf("") }
     var tipo by remember { mutableStateOf(TipoVeiculo.CAMINHAO) }
     var status by remember { mutableStateOf(StatusOperacionalVeiculo.DISPONIVEL) }
-    var fotoUri by remember { mutableStateOf<Uri?>(null) }
+    var fotoBase64 by remember { mutableStateOf<String?>(null) }
     var uriPendente by remember { mutableStateOf<Uri?>(null) }
 
     val lancadorCamera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { sucesso ->
-        if (sucesso) fotoUri = uriPendente
+        if (sucesso) fotoBase64 = uriPendente?.let { FotoBase64.paraBase64(context, it) }
     }
     val lancadorPermissaoCamera = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedida ->
         if (concedida) {
@@ -79,8 +83,8 @@ fun CadastroVeiculoScreen(onVoltar: () -> Unit) {
     }
 
     fun limparFormulario() {
-        editandoId = 0L; placa = ""; modelo = ""; tipo = TipoVeiculo.CAMINHAO
-        status = StatusOperacionalVeiculo.DISPONIVEL; fotoUri = null
+        veiculoEmEdicao = null; placa = ""; modelo = ""; tipo = TipoVeiculo.CAMINHAO
+        status = StatusOperacionalVeiculo.DISPONIVEL; fotoBase64 = null
     }
 
     Scaffold(
@@ -107,32 +111,30 @@ fun CadastroVeiculoScreen(onVoltar: () -> Unit) {
                 EnumDropdown("Status", StatusOperacionalVeiculo.entries.toTypedArray(), status, { status = it }, Modifier.fillMaxWidth())
 
                 OutlinedButton(onClick = { lancadorPermissaoCamera.launch(Manifest.permission.CAMERA) }) {
-                    Text(if (fotoUri == null) "Tirar foto do veículo" else "Tirar outra foto")
+                    Text(if (fotoBase64 == null) "Tirar foto do veículo" else "Tirar outra foto")
                 }
-                fotoUri?.let { uri ->
-                    AndroidView(
-                        factory = { ctx -> ImageView(ctx) },
-                        update = { it.setImageURI(uri) },
-                        modifier = Modifier.fillMaxWidth().height(180.dp)
-                    )
-                }
+                FotoVeiculo(fotoBase64, Modifier.fillMaxWidth().height(180.dp))
 
                 Button(
                     onClick = {
-                        viewModel.salvar(
-                            VeiculoEntity(
-                                id = editandoId,
-                                placa = placa,
-                                modelo = modelo,
-                                tipo = tipo,
-                                fotoUri = fotoUri?.toString(),
-                                status = status
-                            )
+                        val entidade = veiculoEmEdicao?.copy(
+                            placa = placa,
+                            modelo = modelo,
+                            tipo = tipo,
+                            status = status,
+                            fotoBase64 = fotoBase64
+                        ) ?: VeiculoEntity(
+                            placa = placa,
+                            modelo = modelo,
+                            tipo = tipo,
+                            fotoBase64 = fotoBase64,
+                            status = status
                         )
+                        viewModel.salvar(entidade)
                         limparFormulario()
                     },
                     modifier = Modifier.fillMaxWidth()
-                ) { Text(if (editandoId == 0L) "Cadastrar veículo" else "Salvar alterações") }
+                ) { Text(if (veiculoEmEdicao == null) "Cadastrar veículo" else "Salvar alterações") }
             }
 
             Divider(modifier = Modifier.padding(vertical = 12.dp))
@@ -142,17 +144,24 @@ fun CadastroVeiculoScreen(onVoltar: () -> Unit) {
                     Card(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                         onClick = {
-                            editandoId = veiculo.id
+                            veiculoEmEdicao = veiculo
                             placa = veiculo.placa
                             modelo = veiculo.modelo
                             tipo = veiculo.tipo
                             status = veiculo.status
-                            fotoUri = veiculo.fotoUri?.let { Uri.parse(it) }
+                            fotoBase64 = veiculo.fotoBase64
                         }
                     ) {
-                        Column(Modifier.padding(12.dp)) {
-                            Text("${veiculo.placa} · ${veiculo.modelo}", style = MaterialTheme.typography.titleMedium)
-                            Text("${veiculo.tipo} · ${veiculo.status}", style = MaterialTheme.typography.bodySmall)
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            FotoVeiculo(veiculo.fotoBase64, Modifier.size(64.dp))
+                            Column {
+                                Text("${veiculo.placa} · ${veiculo.modelo}", style = MaterialTheme.typography.titleMedium)
+                                Text("${veiculo.tipo} · ${veiculo.status}", style = MaterialTheme.typography.bodySmall)
+                            }
                         }
                     }
                 }

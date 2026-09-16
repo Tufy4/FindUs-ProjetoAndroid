@@ -15,18 +15,18 @@ class TelemetriaSimuladorManager(
     private val telemetriaRepository: TelemetriaRepository,
     private val escopo: CoroutineScope
 ) {
-    private val jobsAtivos = mutableMapOf<Long, Job>()
+    private val jobsAtivos = mutableMapOf<String, Job>()
 
-    fun estaAtivo(veiculoId: Long): Boolean = jobsAtivos[veiculoId]?.isActive == true
+    fun estaAtivo(veiculoId: String): Boolean = jobsAtivos[veiculoId]?.isActive == true
 
-    fun iniciar(veiculoId: Long, trajeto: List<PontoRota> = RotasSimuladas.trajetoPadrao(veiculoId)) {
+    fun iniciar(veiculoId: String, trajeto: List<PontoRota> = RotasSimuladas.trajetoPadrao(veiculoId)) {
         if (estaAtivo(veiculoId)) return
         jobsAtivos[veiculoId] = escopo.launch {
             TelemetriaSimulador(veiculoId, trajeto, veiculoRepository, telemetriaRepository).executar()
         }
     }
 
-    fun parar(veiculoId: Long) {
+    fun parar(veiculoId: String) {
         jobsAtivos[veiculoId]?.cancel()
         jobsAtivos.remove(veiculoId)
     }

@@ -1,27 +1,20 @@
 package com.example.findus.data.local.entity
 
 import androidx.room.Entity
-import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import java.util.UUID
 
 @Entity(
     tableName = "avaliacoes_produto",
-    foreignKeys = [
-        ForeignKey(
-            entity = ProdutoEntity::class,
-            parentColumns = ["id"],
-            childColumns = ["produtoId"],
-            onDelete = ForeignKey.CASCADE
-        )
-    ],
     indices = [Index(value = ["produtoId"])]
 )
 data class AvaliacaoProdutoEntity(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
-    val produtoId: Long,
-    val nota: Int,
+    @PrimaryKey
+    val id: String = UUID.randomUUID().toString(),
+    val produtoId: String = "",
+    val nota: Int = 0,
     val comentario: String? = null,
-    val data: Long = System.currentTimeMillis()
+    val data: Long = System.currentTimeMillis(),
+    val deletado: Boolean = false
 )

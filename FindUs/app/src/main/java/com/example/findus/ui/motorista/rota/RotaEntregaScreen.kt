@@ -28,13 +28,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.findus.FindUsApplication
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.Marker
-import com.google.maps.android.compose.MarkerState
-import com.google.maps.android.compose.Polyline
-import com.google.maps.android.compose.rememberCameraPositionState
+import com.example.findus.ui.map.MapaOsm
+import com.example.findus.ui.map.MarcadorMapa
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,9 +37,10 @@ fun RotaEntregaScreen(onVoltar: () -> Unit) {
     val context = LocalContext.current
     val app = context.applicationContext as FindUsApplication
     val viewModel: RotaEntregaViewModel = viewModel(factory = viewModelFactory {
-        initializer { RotaEntregaViewModel(app.container.locationHelper) }
+        initializer { RotaEntregaViewModel(app.container.locationHelper, app.container.rotaService) }
     })
     val posicaoAtual by viewModel.posicaoAtual.collectAsStateWithLifecycle()
+    val rota by viewModel.rota.collectAsStateWithLifecycle()
 
     val lancadorPermissao = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedida ->
         if (concedida) viewModel.atualizarLocalizacaoAtual()
@@ -60,21 +56,20 @@ fun RotaEntregaScreen(onVoltar: () -> Unit) {
         }
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-            val destino = LatLng(viewModel.destinoEntrega.latitude, viewModel.destinoEntrega.longitude)
-            val origem = posicaoAtual?.let { LatLng(it.latitude, it.longitude) }
-            val cameraPositionState = rememberCameraPositionState {
-                position = CameraPosition.fromLatLngZoom(origem ?: destino, 13f)
-            }
+            val destino = viewModel.destinoEntrega
+            val marcadores = mutableListOf(
+                MarcadorMapa(posicao = destino, titulo = "Ponto de entrega", corHex = "#C62828")
+            )
+            posicaoAtual?.let { marcadores.add(MarcadorMapa(posicao = it, titulo = "Sua posição")) }
 
-            GoogleMap(modifier = Modifier.fillMaxSize(), cameraPositionState = cameraPositionState) {
-                Marker(state = MarkerState(destino), title = "Ponto de entrega")
-                origem?.let { pontoOrigem ->
-                    Marker(state = MarkerState(pontoOrigem), title = "Sua posição")
-                    Polyline(points = listOf(pontoOrigem, destino))
-                }
-            }
+            MapaOsm(
+                marcadores = marcadores,
+                modifier = Modifier.fillMaxSize(),
+                linha = rota,
+                centro = posicaoAtual
+            )
 
-            if (origem == null) {
+            if (posicaoAtual == null) {
                 Surface(
                     modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
                     tonalElevation = 4.dp

@@ -1,8 +1,12 @@
 package com.example.findus
 
+import android.Manifest
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -20,6 +24,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme {
+                val pedirNotificacao = rememberLauncherForActivityResult(
+                    ActivityResultContracts.RequestPermission()
+                ) { }
+                LaunchedEffect(Unit) {
+                    if (Build.VERSION.SDK_INT >= 33) {
+                        pedirNotificacao.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                }
+
                 var autenticado by remember { mutableStateOf(FirebaseAuth.getInstance().currentUser != null) }
                 if (autenticado) {
                     FindUsNavHost()

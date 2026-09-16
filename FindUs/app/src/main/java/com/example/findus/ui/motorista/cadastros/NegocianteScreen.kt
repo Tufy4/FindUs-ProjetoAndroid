@@ -38,6 +38,7 @@ import com.example.findus.FindUsApplication
 import com.example.findus.data.enum.TipoNegociante
 import com.example.findus.data.local.entity.NegocianteEntity
 import com.example.findus.ui.common.EnumDropdown
+import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,14 +49,14 @@ fun NegocianteScreen(onVoltar: () -> Unit) {
     })
     val negociantes by viewModel.negociantes.collectAsStateWithLifecycle()
 
-    var editandoId by remember { mutableStateOf(0L) }
+    var editandoId by remember { mutableStateOf("") }
     var nome by remember { mutableStateOf("") }
     var documento by remember { mutableStateOf("") }
     var tipo by remember { mutableStateOf(TipoNegociante.CLIENTE) }
     var endereco by remember { mutableStateOf("") }
 
     fun limparFormulario() {
-        editandoId = 0L; nome = ""; documento = ""; tipo = TipoNegociante.CLIENTE; endereco = ""
+        editandoId = ""; nome = ""; documento = ""; tipo = TipoNegociante.CLIENTE; endereco = ""
     }
 
     Scaffold(
@@ -85,7 +86,7 @@ fun NegocianteScreen(onVoltar: () -> Unit) {
                     onClick = {
                         viewModel.salvar(
                             NegocianteEntity(
-                                id = editandoId,
+                                id = editandoId.ifEmpty { UUID.randomUUID().toString() },
                                 nome = nome,
                                 documento = documento,
                                 tipo = tipo,
@@ -95,7 +96,7 @@ fun NegocianteScreen(onVoltar: () -> Unit) {
                         limparFormulario()
                     },
                     modifier = Modifier.fillMaxWidth()
-                ) { Text(if (editandoId == 0L) "Cadastrar negociante" else "Salvar alterações") }
+                ) { Text(if (editandoId.isEmpty()) "Cadastrar negociante" else "Salvar alterações") }
             }
 
             Divider(modifier = Modifier.padding(vertical = 12.dp))

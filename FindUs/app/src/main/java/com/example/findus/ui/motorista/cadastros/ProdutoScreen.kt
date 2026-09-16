@@ -35,6 +35,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.findus.FindUsApplication
 import com.example.findus.data.local.entity.ProdutoEntity
+import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,14 +46,14 @@ fun ProdutoScreen(onVoltar: () -> Unit) {
     })
     val produtos by viewModel.produtos.collectAsStateWithLifecycle()
 
-    var editandoId by remember { mutableStateOf(0L) }
+    var editandoId by remember { mutableStateOf("") }
     var nome by remember { mutableStateOf("") }
     var descricao by remember { mutableStateOf("") }
     var peso by remember { mutableStateOf("") }
     var categoria by remember { mutableStateOf("") }
 
     fun limparFormulario() {
-        editandoId = 0L; nome = ""; descricao = ""; peso = ""; categoria = ""
+        editandoId = ""; nome = ""; descricao = ""; peso = ""; categoria = ""
     }
 
     Scaffold(
@@ -82,7 +83,7 @@ fun ProdutoScreen(onVoltar: () -> Unit) {
                     onClick = {
                         viewModel.salvar(
                             ProdutoEntity(
-                                id = editandoId,
+                                id = editandoId.ifEmpty { UUID.randomUUID().toString() },
                                 nome = nome,
                                 descricao = descricao,
                                 peso = peso.toDoubleOrNull() ?: 0.0,
@@ -92,7 +93,7 @@ fun ProdutoScreen(onVoltar: () -> Unit) {
                         limparFormulario()
                     },
                     modifier = Modifier.fillMaxWidth()
-                ) { Text(if (editandoId == 0L) "Cadastrar produto" else "Salvar alterações") }
+                ) { Text(if (editandoId.isEmpty()) "Cadastrar produto" else "Salvar alterações") }
             }
 
             Divider(modifier = Modifier.padding(vertical = 12.dp))

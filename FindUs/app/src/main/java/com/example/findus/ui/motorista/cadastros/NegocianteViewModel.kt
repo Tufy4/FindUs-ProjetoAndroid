@@ -14,7 +14,7 @@ class NegocianteViewModel(private val repository: NegocianteRepository) : ViewMo
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun salvar(negociante: NegocianteEntity) = viewModelScope.launch {
-        if (negociante.id == 0L) repository.salvar(negociante) else repository.atualizar(negociante)
+        repository.salvar(negociante)
     }
 
     fun remover(negociante: NegocianteEntity) = viewModelScope.launch { repository.remover(negociante) }

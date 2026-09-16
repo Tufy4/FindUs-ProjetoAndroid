@@ -40,6 +40,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.findus.FindUsApplication
 import com.example.findus.data.local.entity.MotoristaEntity
 import com.example.findus.data.local.entity.VeiculoEntity
+import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,7 +52,7 @@ fun MotoristaScreen(onVoltar: () -> Unit) {
     val motoristas by viewModel.motoristas.collectAsStateWithLifecycle()
     val veiculos by viewModel.veiculos.collectAsStateWithLifecycle()
 
-    var editandoId by remember { mutableStateOf(0L) }
+    var editandoId by remember { mutableStateOf("") }
     var nome by remember { mutableStateOf("") }
     var cnh by remember { mutableStateOf("") }
     var telefone by remember { mutableStateOf("") }
@@ -59,7 +60,7 @@ fun MotoristaScreen(onVoltar: () -> Unit) {
     var expandido by remember { mutableStateOf(false) }
 
     fun limparFormulario() {
-        editandoId = 0L; nome = ""; cnh = ""; telefone = ""; veiculoSelecionado = null
+        editandoId = ""; nome = ""; cnh = ""; telefone = ""; veiculoSelecionado = null
     }
 
     Scaffold(
@@ -108,7 +109,7 @@ fun MotoristaScreen(onVoltar: () -> Unit) {
                     onClick = {
                         viewModel.salvar(
                             MotoristaEntity(
-                                id = editandoId,
+                                id = editandoId.ifEmpty { UUID.randomUUID().toString() },
                                 nome = nome,
                                 cnh = cnh,
                                 telefone = telefone,
@@ -118,7 +119,7 @@ fun MotoristaScreen(onVoltar: () -> Unit) {
                         limparFormulario()
                     },
                     modifier = Modifier.fillMaxWidth()
-                ) { Text(if (editandoId == 0L) "Cadastrar motorista" else "Salvar alterações") }
+                ) { Text(if (editandoId.isEmpty()) "Cadastrar motorista" else "Salvar alterações") }
             }
 
             Divider(modifier = Modifier.padding(vertical = 12.dp))
