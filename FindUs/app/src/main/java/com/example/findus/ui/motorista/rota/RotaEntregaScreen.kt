@@ -40,10 +40,11 @@ fun RotaEntregaScreen(onVoltar: () -> Unit) {
         initializer { RotaEntregaViewModel(app.container.locationHelper, app.container.rotaService) }
     })
     val posicaoAtual by viewModel.posicaoAtual.collectAsStateWithLifecycle()
+    val destino by viewModel.destino.collectAsStateWithLifecycle()
     val rota by viewModel.rota.collectAsStateWithLifecycle()
 
-    val lancadorPermissao = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedida ->
-        if (concedida) viewModel.atualizarLocalizacaoAtual()
+    val lancadorPermissao = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        viewModel.atualizarLocalizacaoAtual()
     }
     LaunchedEffect(Unit) { lancadorPermissao.launch(Manifest.permission.ACCESS_FINE_LOCATION) }
 
@@ -56,26 +57,25 @@ fun RotaEntregaScreen(onVoltar: () -> Unit) {
         }
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-            val destino = viewModel.destinoEntrega
-            val marcadores = mutableListOf(
-                MarcadorMapa(posicao = destino, titulo = "Ponto de entrega", corHex = "#C62828")
-            )
+            val marcadores = mutableListOf<MarcadorMapa>()
+            destino?.let { marcadores.add(MarcadorMapa(posicao = it, titulo = "Ponto de entrega", corHex = "#C62828")) }
             posicaoAtual?.let { marcadores.add(MarcadorMapa(posicao = it, titulo = "Sua posição")) }
 
             MapaOsm(
                 marcadores = marcadores,
                 modifier = Modifier.fillMaxSize(),
                 linha = rota,
-                centro = posicaoAtual
+                centro = posicaoAtual,
+                onToqueMapa = { viewModel.definirDestino(it) }
             )
 
-            if (posicaoAtual == null) {
+            if (destino == null) {
                 Surface(
                     modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
                     tonalElevation = 4.dp
                 ) {
                     Box(Modifier.padding(12.dp)) {
-                        Text("Obtendo localização atual…", style = MaterialTheme.typography.bodyMedium)
+                        Text("Toque no mapa para escolher o ponto de entrega", style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             }

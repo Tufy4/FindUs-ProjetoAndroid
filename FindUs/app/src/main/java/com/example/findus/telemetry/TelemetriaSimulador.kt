@@ -15,7 +15,7 @@ class TelemetriaSimulador(
     private val trajeto: List<PontoRota>,
     private val veiculoRepository: VeiculoRepository,
     private val telemetriaRepository: TelemetriaRepository,
-    private val intervaloMs: Long = 3000L
+    private val intervaloMs: Long = 2000L
 ) {
     suspend fun executar() {
         veiculoRepository.atualizarStatus(veiculoId, StatusOperacionalVeiculo.EM_ROTA)

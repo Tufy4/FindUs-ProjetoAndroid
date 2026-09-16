@@ -21,8 +21,6 @@ import com.example.findus.location.GeofenceNotificador
 import com.example.findus.location.LocationHelper
 import com.example.findus.location.ReverseGeocoder
 import com.example.findus.location.RotaService
-import com.example.findus.location.Geofence
-import com.example.findus.telemetry.RotasSimuladas
 import com.example.findus.telemetry.TelemetriaSimuladorManager
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.CoroutineScope
@@ -51,22 +49,19 @@ class AppContainer(context: Context) {
     val motoristaRepository = MotoristaRepository(database.motoristaDao(), motoristasRemoto)
     val avaliacaoProdutoRepository = AvaliacaoProdutoRepository(database.avaliacaoProdutoDao(), avaliacoesRemoto)
 
-    val telemetriaSimuladorManager = TelemetriaSimuladorManager(
-        veiculoRepository = veiculoRepository,
-        telemetriaRepository = telemetriaRepository,
-        escopo = escopoApp
-    )
-
     val locationHelper = LocationHelper(context)
     val reverseGeocoder = ReverseGeocoder(context)
     val rotaService = RotaService()
 
-    val geofenceMonitor = GeofenceMonitor(
-        Geofence(
-            centroLat = RotasSimuladas.centroDistribuicao.first * -1,
-            centroLon = RotasSimuladas.centroDistribuicao.second * -1,
-            raioMetros = 1500f
-        )
+    val geofenceMonitor = GeofenceMonitor()
+
+    val telemetriaSimuladorManager = TelemetriaSimuladorManager(
+        veiculoRepository = veiculoRepository,
+        telemetriaRepository = telemetriaRepository,
+        locationHelper = locationHelper,
+        rotaService = rotaService,
+        geofenceMonitor = geofenceMonitor,
+        escopo = escopoApp
     )
 
     val geofenceNotificador = GeofenceNotificador(context.applicationContext)

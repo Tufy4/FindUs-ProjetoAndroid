@@ -1,35 +1,40 @@
 package com.example.findus.telemetry
 
 import com.example.findus.data.enum.EstadoPortas
+import com.example.findus.location.Coordenada
+import com.example.findus.location.RotaService
+import kotlin.math.ceil
+import kotlin.math.floor
 
 /**
- * Trajetos mock (Centro de Distribuição -> ponto de entrega) usados pelo
- * simulador de telemetria. Cada veículo recebe um pequeno deslocamento para
- * não sobrepor marcadores no mapa.
+ * Monta o trajeto do simulador de telemetria a partir da rota real devolvida
+ * pelo RotaService, reamostrada em um número fixo de passos.
  */
 object RotasSimuladas {
-    val centroDistribuicao = 23.2237 to 45.8937 // São José dos Campos (lat/lon positivos, sinal aplicado abaixo)
+    val destinoPadrao = Coordenada(-21.806911237893907, -48.17465712954804)
 
-    fun trajetoPadrao(veiculoId: String): List<PontoRota> {
-        val offset = (veiculoId.hashCode() % 5) * 0.004
-        val origemLat = -23.2237 - offset
-        val origemLon = -45.8937 - offset
-        val destinoLat = -23.1791 - offset
-        val destinoLon = -45.8641 - offset
+    private const val PASSOS = 30
 
-        val passos = 10
-        return (0..passos).map { indice ->
-            val fracao = indice.toDouble() / passos
-            val lat = origemLat + (destinoLat - origemLat) * fracao
-            val lon = origemLon + (destinoLon - origemLon) * fracao
+    suspend fun trajeto(
+        rotaService: RotaService,
+        origem: Coordenada,
+        destino: Coordenada = destinoPadrao
+    ): List<PontoRota> {
+        val pontos = rotaService.rota(origem, destino)
+        return (0..PASSOS).map { indice ->
+            val posicao = indice.toDouble() * (pontos.size - 1) / PASSOS
+            val anterior = pontos[floor(posicao).toInt()]
+            val proximo = pontos[ceil(posicao).toInt()]
+            val fracao = posicao - floor(posicao)
+            val latitude = anterior.latitude + (proximo.latitude - anterior.latitude) * fracao
+            val longitude = anterior.longitude + (proximo.longitude - anterior.longitude) * fracao
             val velocidade = when (indice) {
-                0, passos -> 0.0
-                1, passos - 1 -> 20.0
+                0, PASSOS -> 0.0
+                1, PASSOS - 1 -> 20.0
                 else -> 45.0 + (indice % 3) * 8.0
             }
-            val estadoPortas = if (indice == 0 || indice == passos) EstadoPortas.ABERTA else EstadoPortas.FECHADA
-            val motorLigado = indice != 0
-            PontoRota(lat, lon, velocidade, estadoPortas, motorLigado)
+            val estadoPortas = if (indice == 0 || indice == PASSOS) EstadoPortas.ABERTA else EstadoPortas.FECHADA
+            PontoRota(latitude, longitude, velocidade, estadoPortas, motorLigado = indice != 0)
         }
     }
 }
