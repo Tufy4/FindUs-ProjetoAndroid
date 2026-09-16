@@ -8,13 +8,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun PerfilSelectScreen(onEscolherMotorista: () -> Unit, onEscolherControlador: () -> Unit) {
+fun PerfilSelectScreen(onEscolherMotorista: () -> Unit, onEscolherControlador: () -> Unit, onSair: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.Center,
@@ -28,5 +29,7 @@ fun PerfilSelectScreen(onEscolherMotorista: () -> Unit, onEscolherControlador: (
         Button(onClick = onEscolherMotorista, modifier = Modifier.fillMaxWidth()) { Text("Motorista") }
         androidx.compose.foundation.layout.Spacer(Modifier.padding(6.dp))
         Button(onClick = onEscolherControlador, modifier = Modifier.fillMaxWidth()) { Text("Controlador") }
+        androidx.compose.foundation.layout.Spacer(Modifier.padding(6.dp))
+        TextButton(onClick = onSair, modifier = Modifier.fillMaxWidth()) { Text("Sair") }
     }
 }
