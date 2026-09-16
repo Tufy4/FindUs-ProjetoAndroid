@@ -8,9 +8,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.findus.BuildConfig
 import com.example.findus.location.Coordenada
+import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polyline
 
@@ -44,7 +46,8 @@ fun MapaOsm(
     modifier: Modifier = Modifier,
     linha: List<Coordenada> = emptyList(),
     centro: Coordenada? = null,
-    zoom: Double = 13.0
+    zoom: Double = 13.0,
+    onToqueMapa: ((Coordenada) -> Unit)? = null
 ) {
     val jaCentralizou = remember { booleanArrayOf(false) }
 
@@ -66,6 +69,17 @@ fun MapaOsm(
             }
 
             view.overlays.clear()
+
+            if (onToqueMapa != null) {
+                view.overlays.add(MapEventsOverlay(object : MapEventsReceiver {
+                    override fun singleTapConfirmedHelper(ponto: GeoPoint): Boolean {
+                        onToqueMapa(Coordenada(ponto.latitude, ponto.longitude))
+                        return true
+                    }
+
+                    override fun longPressHelper(ponto: GeoPoint) = false
+                }))
+            }
 
             if (linha.size >= 2) {
                 val polyline = Polyline(view)

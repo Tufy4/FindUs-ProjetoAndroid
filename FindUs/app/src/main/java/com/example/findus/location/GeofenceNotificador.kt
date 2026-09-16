@@ -35,7 +35,7 @@ class GeofenceNotificador(private val context: Context) {
         val notificacao = NotificationCompat.Builder(context, CANAL)
             .setSmallIcon(android.R.drawable.ic_dialog_map)
             .setContentTitle("Perímetro monitorado")
-            .setContentText("Veículo ${evento.veiculoId} $acao perímetro monitorado")
+            .setContentText("Veículo ${evento.veiculoId} $acao centro de distribuição")
             .setAutoCancel(true)
             .build()
 

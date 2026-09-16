@@ -81,7 +81,7 @@ fun MapaControladorScreen(onVoltar: () -> Unit, onVerRota: (String) -> Unit) {
             val veiculo = veiculos.find { it.id == evento.veiculoId }
             val acao = if (evento.tipo == TipoEventoGeofence.ENTROU) "entrou no" else "saiu do"
             escopo.launch {
-                snackbarHostState.showSnackbar("Veículo ${veiculo?.placa ?: evento.veiculoId} $acao perímetro monitorado")
+                snackbarHostState.showSnackbar("Veículo ${veiculo?.placa ?: evento.veiculoId} $acao centro de distribuição")
             }
         }
     }

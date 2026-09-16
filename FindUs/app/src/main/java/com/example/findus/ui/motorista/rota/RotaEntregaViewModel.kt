@@ -16,14 +16,19 @@ class RotaEntregaViewModel(
     private val _posicaoAtual = MutableStateFlow<Coordenada?>(null)
     val posicaoAtual: StateFlow<Coordenada?> = _posicaoAtual
 
+    private val _destino = MutableStateFlow<Coordenada?>(null)
+    val destino: StateFlow<Coordenada?> = _destino
+
     private val _rota = MutableStateFlow<List<Coordenada>>(emptyList())
     val rota: StateFlow<List<Coordenada>> = _rota
 
-    val destinoEntrega = Coordenada(-23.1791, -45.8641)
-
     fun atualizarLocalizacaoAtual() = viewModelScope.launch {
-        val atual = locationHelper.obterLocalizacaoAtual()
-        _posicaoAtual.value = atual
-        if (atual != null) _rota.value = rotaService.rota(atual, destinoEntrega)
+        _posicaoAtual.value = locationHelper.obterLocalizacaoOuPadrao()
+    }
+
+    fun definirDestino(coordenada: Coordenada) = viewModelScope.launch {
+        _destino.value = coordenada
+        val origem = _posicaoAtual.value ?: return@launch
+        _rota.value = rotaService.rota(origem, coordenada)
     }
 }

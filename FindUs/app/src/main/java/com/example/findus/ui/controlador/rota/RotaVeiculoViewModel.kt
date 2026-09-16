@@ -41,6 +41,6 @@ class RotaVeiculoViewModel(
     }
 
     fun atualizarLocalizacaoControlador() = viewModelScope.launch {
-        _posicaoControlador.value = locationHelper.obterLocalizacaoAtual()
+        _posicaoControlador.value = locationHelper.obterLocalizacaoOuPadrao()
     }
 }
