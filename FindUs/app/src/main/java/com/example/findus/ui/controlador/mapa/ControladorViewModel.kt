@@ -40,6 +40,7 @@ class ControladorViewModel(
     fun simulacaoAtiva(veiculoId: String) = telemetriaSimuladorManager.estaAtivo(veiculoId)
 
     fun consultarEndereco(latitude: Double, longitude: Double) = viewModelScope.launch {
-        _enderecoSelecionado.value = reverseGeocoder.endereco(latitude, longitude)
+        _enderecoSelecionado.value = null
+        _enderecoSelecionado.value = reverseGeocoder.endereco(latitude, longitude) ?: "Endereço não encontrado."
     }
 }
