@@ -23,9 +23,6 @@ import androidx.compose.ui.unit.dp
 fun MotoristaHomeScreen(
     onVoltar: () -> Unit,
     onCadastroVeiculo: () -> Unit,
-    onProdutos: () -> Unit,
-    onNegociantes: () -> Unit,
-    onAvaliacoes: () -> Unit,
     onRotaEntrega: () -> Unit
 ) {
     Scaffold(
@@ -41,9 +38,6 @@ fun MotoristaHomeScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Button(onClick = onCadastroVeiculo, modifier = Modifier.fillMaxWidth()) { Text("Cadastro de veículo") }
-            Button(onClick = onProdutos, modifier = Modifier.fillMaxWidth()) { Text("Produtos") }
-            Button(onClick = onNegociantes, modifier = Modifier.fillMaxWidth()) { Text("Negociantes") }
-            Button(onClick = onAvaliacoes, modifier = Modifier.fillMaxWidth()) { Text("Avaliações de produto") }
             Button(onClick = onRotaEntrega, modifier = Modifier.fillMaxWidth()) { Text("Rota até a entrega") }
         }
     }
