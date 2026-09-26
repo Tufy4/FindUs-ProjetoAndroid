@@ -45,6 +45,7 @@ fun MapaOsm(
     marcadores: List<MarcadorMapa>,
     modifier: Modifier = Modifier,
     linha: List<Coordenada> = emptyList(),
+    linhas: List<List<Coordenada>> = emptyList(),
     centro: Coordenada? = null,
     zoom: Double = 13.0,
     onToqueMapa: ((Coordenada) -> Unit)? = null
@@ -81,9 +82,9 @@ fun MapaOsm(
                 }))
             }
 
-            if (linha.size >= 2) {
+            (linhas + listOf(linha)).filter { it.size >= 2 }.forEach { pontos ->
                 val polyline = Polyline(view)
-                polyline.setPoints(linha.map { GeoPoint(it.latitude, it.longitude) })
+                polyline.setPoints(pontos.map { GeoPoint(it.latitude, it.longitude) })
                 polyline.outlinePaint.strokeWidth = 8f
                 polyline.outlinePaint.color = Color.parseColor("#1976D2")
                 view.overlays.add(polyline)

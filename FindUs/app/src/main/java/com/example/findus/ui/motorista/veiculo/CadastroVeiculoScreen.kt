@@ -59,7 +59,13 @@ fun CadastroVeiculoScreen(onVoltar: () -> Unit) {
     val context = LocalContext.current
     val app = context.applicationContext as FindUsApplication
     val viewModel: CadastroVeiculoViewModel = viewModel(factory = viewModelFactory {
-        initializer { CadastroVeiculoViewModel(app.container.veiculoRepository) }
+        initializer {
+            CadastroVeiculoViewModel(
+                app.container.veiculoRepository,
+                app.container.telemetriaRepository,
+                app.container.locationHelper
+            )
+        }
     })
     val veiculos by viewModel.veiculos.collectAsStateWithLifecycle()
 
@@ -130,7 +136,7 @@ fun CadastroVeiculoScreen(onVoltar: () -> Unit) {
                             fotoBase64 = fotoBase64,
                             status = status
                         )
-                        viewModel.salvar(entidade)
+                        viewModel.salvar(entidade, novo = veiculoEmEdicao == null)
                         limparFormulario()
                     },
                     modifier = Modifier.fillMaxWidth()

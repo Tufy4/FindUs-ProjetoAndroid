@@ -30,14 +30,14 @@ class ControladorViewModel(
 
     val eventosGeofence = geofenceNotificador.eventos
 
+    val trajetos = telemetriaSimuladorManager.trajetos
+
     private val _enderecoSelecionado = MutableStateFlow<String?>(null)
     val enderecoSelecionado: StateFlow<String?> = _enderecoSelecionado
 
     fun iniciarSimulacao(veiculoId: String) = telemetriaSimuladorManager.iniciar(veiculoId)
 
     fun pararSimulacao(veiculoId: String) = telemetriaSimuladorManager.parar(veiculoId)
-
-    fun simulacaoAtiva(veiculoId: String) = telemetriaSimuladorManager.estaAtivo(veiculoId)
 
     fun consultarEndereco(latitude: Double, longitude: Double) = viewModelScope.launch {
         _enderecoSelecionado.value = null
