@@ -50,7 +50,7 @@ class AppContainer(context: Context) {
     val avaliacaoProdutoRepository = AvaliacaoProdutoRepository(database.avaliacaoProdutoDao(), avaliacoesRemoto)
 
     val locationHelper = LocationHelper(context)
-    val reverseGeocoder = ReverseGeocoder(context)
+    val reverseGeocoder = ReverseGeocoder()
     val rotaService = RotaService()
 
     val geofenceMonitor = GeofenceMonitor()
