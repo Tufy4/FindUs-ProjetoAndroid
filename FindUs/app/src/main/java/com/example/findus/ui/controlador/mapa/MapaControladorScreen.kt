@@ -35,6 +35,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -71,6 +72,7 @@ fun MapaControladorScreen(onVoltar: () -> Unit, onVerRota: (String) -> Unit) {
     val veiculos by viewModel.veiculos.collectAsStateWithLifecycle()
     val telemetrias by viewModel.ultimasTelemetrias.collectAsStateWithLifecycle()
     val enderecoSelecionado by viewModel.enderecoSelecionado.collectAsStateWithLifecycle()
+    val trajetos by viewModel.trajetos.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
     val escopo = rememberCoroutineScope()
@@ -109,10 +111,11 @@ fun MapaControladorScreen(onVoltar: () -> Unit, onVerRota: (String) -> Unit) {
                     }
                 )
             }
-            Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+            Box(modifier = Modifier.fillMaxWidth().weight(1f).clipToBounds()) {
                 MapaOsm(
                     marcadores = marcadores,
                     modifier = Modifier.fillMaxSize(),
+                    linhas = trajetos.values.toList(),
                     centro = marcadores.firstOrNull()?.posicao,
                     zoom = 12.0
                 )
@@ -131,7 +134,7 @@ fun MapaControladorScreen(onVoltar: () -> Unit, onVerRota: (String) -> Unit) {
                     LinhaTelemetriaVeiculo(
                         veiculo = veiculo,
                         telemetria = telemetria,
-                        simulacaoAtiva = viewModel.simulacaoAtiva(veiculo.id),
+                        simulacaoAtiva = trajetos.containsKey(veiculo.id),
                         onIniciarSimulacao = { viewModel.iniciarSimulacao(veiculo.id) },
                         onPararSimulacao = { viewModel.pararSimulacao(veiculo.id) },
                         onVerRota = { onVerRota(veiculo.id) }

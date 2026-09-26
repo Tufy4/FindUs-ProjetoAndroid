@@ -34,7 +34,7 @@ object RotasSimuladas {
                 else -> 45.0 + (indice % 3) * 8.0
             }
             val estadoPortas = if (indice == 0 || indice == PASSOS) EstadoPortas.ABERTA else EstadoPortas.FECHADA
-            PontoRota(latitude, longitude, velocidade, estadoPortas, motorLigado = indice != 0)
+            PontoRota(latitude, longitude, velocidade, estadoPortas, motorLigado = indice != 0 && indice != PASSOS)
         }
     }
 }

@@ -7,10 +7,10 @@ import com.example.findus.data.repository.TelemetriaRepository
 import com.example.findus.location.Coordenada
 import com.example.findus.location.LocationHelper
 import com.example.findus.location.RotaService
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -29,14 +29,22 @@ class RotaVeiculoViewModel(
     private val _rota = MutableStateFlow<List<Coordenada>>(emptyList())
     val rota: StateFlow<List<Coordenada>> = _rota
 
+    private var ultimoDestino: Coordenada? = null
+
     init {
         viewModelScope.launch {
-            combine(posicaoVeiculo, _posicaoControlador) { veiculo, controlador -> veiculo to controlador }
-                .collect { (veiculo, controlador) ->
-                    if (veiculo != null && controlador != null && _rota.value.isEmpty()) {
-                        _rota.value = rotaService.rota(controlador, Coordenada(veiculo.latitude, veiculo.longitude))
+            while (true) {
+                val veiculo = posicaoVeiculo.value
+                val controlador = _posicaoControlador.value
+                if (veiculo != null && controlador != null) {
+                    val destino = Coordenada(veiculo.latitude, veiculo.longitude)
+                    if (destino != ultimoDestino) {
+                        _rota.value = rotaService.rota(controlador, destino)
+                        ultimoDestino = destino
                     }
                 }
+                delay(3_000)
+            }
         }
     }
 
