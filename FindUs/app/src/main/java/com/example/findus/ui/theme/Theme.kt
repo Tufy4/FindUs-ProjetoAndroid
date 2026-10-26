@@ -9,35 +9,66 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = Blue80,
+    onPrimary = Blue20,
+    primaryContainer = Blue30,
+    onPrimaryContainer = Blue90,
+    secondary = Teal80,
+    onSecondary = Teal20,
+    secondaryContainer = Teal30,
+    onSecondaryContainer = Teal90,
+    tertiary = Amber80,
+    onTertiary = Amber20,
+    tertiaryContainer = Amber30,
+    onTertiaryContainer = Amber90,
+    error = Red80,
+    onError = Red20,
+    errorContainer = Red30,
+    onErrorContainer = Red90,
+    background = Color(0xFF0F1416),
+    onBackground = Neutral90,
+    surface = Color(0xFF0F1416),
+    onSurface = Neutral90,
+    surfaceVariant = NeutralVariant30,
+    onSurfaceVariant = NeutralVariant80,
+    outline = NeutralVariant60
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
+    primary = Blue40,
     onPrimary = Color.White,
+    primaryContainer = Blue90,
+    onPrimaryContainer = Blue10,
+    secondary = Teal40,
     onSecondary = Color.White,
+    secondaryContainer = Teal90,
+    onSecondaryContainer = Teal10,
+    tertiary = Amber40,
     onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    tertiaryContainer = Amber90,
+    onTertiaryContainer = Amber10,
+    error = Red40,
+    onError = Color.White,
+    errorContainer = Red90,
+    onErrorContainer = Red10,
+    background = Neutral99,
+    onBackground = Neutral10,
+    surface = Neutral99,
+    onSurface = Neutral10,
+    surfaceVariant = NeutralVariant90,
+    onSurfaceVariant = NeutralVariant30,
+    outline = NeutralVariant50
 )
 
 @Composable
 fun FindUsTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    // Dynamic color é desligado por padrão para preservar a identidade visual da marca FindUs.
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -53,6 +84,7 @@ fun FindUsTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
+        shapes = FindUsShapes,
         content = content
     )
 }

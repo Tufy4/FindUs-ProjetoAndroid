@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
+import com.example.findus.data.enum.TipoUsuario
 import com.example.findus.ui.controlador.ControladorHomeScreen
 import com.example.findus.ui.controlador.cadastros.MotoristaScreen
 import com.example.findus.ui.controlador.mapa.MapaControladorScreen
@@ -27,20 +28,46 @@ private object Rotas {
     fun controladorRota(veiculoId: String) = "controlador_rota/$veiculoId"
 }
 
+/**
+ * [tipoUsuario] é o perfil já identificado da conta (salvo no cadastro). Quando nulo
+ * (contas antigas sem perfil definido), o fluxo abre a tela de seleção manual e persiste
+ * a escolha via [onSelecionarTipo] para que o próximo login já entre direto na home certa.
+ */
 @Composable
-fun FindUsNavHost(onSair: () -> Unit, navController: NavHostController = rememberNavController()) {
-    NavHost(navController = navController, startDestination = Rotas.SELECAO_PERFIL) {
+fun FindUsNavHost(
+    tipoUsuario: TipoUsuario?,
+    onSelecionarTipo: (TipoUsuario) -> Unit,
+    onSair: () -> Unit,
+    navController: NavHostController = rememberNavController()
+) {
+    val startDestination = when (tipoUsuario) {
+        TipoUsuario.MOTORISTA -> Rotas.MOTORISTA_HOME
+        TipoUsuario.CONTROLADOR -> Rotas.CONTROLADOR_HOME
+        null -> Rotas.SELECAO_PERFIL
+    }
+
+    NavHost(navController = navController, startDestination = startDestination) {
         composable(Rotas.SELECAO_PERFIL) {
             PerfilSelectScreen(
-                onEscolherMotorista = { navController.navigate(Rotas.MOTORISTA_HOME) },
-                onEscolherControlador = { navController.navigate(Rotas.CONTROLADOR_HOME) },
+                onEscolherMotorista = {
+                    onSelecionarTipo(TipoUsuario.MOTORISTA)
+                    navController.navigate(Rotas.MOTORISTA_HOME) {
+                        popUpTo(Rotas.SELECAO_PERFIL) { inclusive = true }
+                    }
+                },
+                onEscolherControlador = {
+                    onSelecionarTipo(TipoUsuario.CONTROLADOR)
+                    navController.navigate(Rotas.CONTROLADOR_HOME) {
+                        popUpTo(Rotas.SELECAO_PERFIL) { inclusive = true }
+                    }
+                },
                 onSair = onSair
             )
         }
 
         composable(Rotas.MOTORISTA_HOME) {
             MotoristaHomeScreen(
-                onVoltar = { navController.popBackStack() },
+                onVoltar = onSair,
                 onCadastroVeiculo = { navController.navigate(Rotas.MOTORISTA_VEICULO) },
                 onRotaEntrega = { navController.navigate(Rotas.MOTORISTA_ROTA) }
             )
@@ -50,7 +77,7 @@ fun FindUsNavHost(onSair: () -> Unit, navController: NavHostController = remembe
 
         composable(Rotas.CONTROLADOR_HOME) {
             ControladorHomeScreen(
-                onVoltar = { navController.popBackStack() },
+                onVoltar = onSair,
                 onMapaTelemetria = { navController.navigate(Rotas.CONTROLADOR_MAPA) },
                 onCadastroMotoristas = { navController.navigate(Rotas.CONTROLADOR_MOTORISTAS) }
             )

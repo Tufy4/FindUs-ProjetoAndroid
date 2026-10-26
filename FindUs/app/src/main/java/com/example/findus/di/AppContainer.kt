@@ -8,6 +8,7 @@ import com.example.findus.data.local.entity.VeiculoEntity
 import com.example.findus.data.remote.FirestoreColecao
 import com.example.findus.data.repository.MotoristaRepository
 import com.example.findus.data.repository.TelemetriaRepository
+import com.example.findus.data.repository.UsuarioRepository
 import com.example.findus.data.repository.VeiculoRepository
 import com.example.findus.data.sync.sincronizar
 import com.example.findus.location.GeofenceMonitor
@@ -36,6 +37,7 @@ class AppContainer(context: Context) {
     val veiculoRepository = VeiculoRepository(database.veiculoDao(), veiculosRemoto)
     val telemetriaRepository = TelemetriaRepository(database.registroTelemetriaDao(), telemetriasRemoto)
     val motoristaRepository = MotoristaRepository(database.motoristaDao(), motoristasRemoto)
+    val usuarioRepository = UsuarioRepository()
 
     val locationHelper = LocationHelper(context)
     val reverseGeocoder = ReverseGeocoder()

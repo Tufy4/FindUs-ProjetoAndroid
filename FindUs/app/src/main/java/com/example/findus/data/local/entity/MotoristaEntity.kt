@@ -15,6 +15,8 @@ import java.util.UUID
 data class MotoristaEntity(
     @PrimaryKey
     val id: String = UUID.randomUUID().toString(),
+    // uid da conta de login (Firebase Auth) criada para este motorista pelo controlador
+    val uid: String = "",
     val nome: String = "",
     val cnh: String = "",
     val telefone: String = "",

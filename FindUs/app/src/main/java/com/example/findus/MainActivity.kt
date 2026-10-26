@@ -7,18 +7,36 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.example.findus.data.enum.TipoUsuario
+import com.example.findus.ui.auth.LoginScreen
 import com.example.findus.ui.navigation.FindUsNavHost
 import com.example.findus.ui.theme.FindUsTheme
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.launch
+
+private sealed interface SessaoUiState {
+    data object Carregando : SessaoUiState
+    data object Deslogado : SessaoUiState
+    data class Logado(val tipo: TipoUsuario?) : SessaoUiState
+}
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,17 +52,39 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                var autenticado by remember { mutableStateOf(FirebaseAuth.getInstance().currentUser != null) }
+                val app = application as FindUsApplication
+                val escopo = rememberCoroutineScope()
+                var sessao by remember { mutableStateOf<SessaoUiState>(SessaoUiState.Carregando) }
+
+                LaunchedEffect(Unit) {
+                    val usuario = FirebaseAuth.getInstance().currentUser
+                    sessao = if (usuario == null) {
+                        SessaoUiState.Deslogado
+                    } else {
+                        SessaoUiState.Logado(app.container.usuarioRepository.buscarTipo(usuario.uid))
+                    }
+                }
+
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    if (autenticado) {
-                        FindUsNavHost(
+                    when (val estado = sessao) {
+                        is SessaoUiState.Carregando -> TelaCarregando()
+                        is SessaoUiState.Deslogado -> LoginScreen(
+                            onAutenticado = { tipo -> sessao = SessaoUiState.Logado(tipo) }
+                        )
+                        is SessaoUiState.Logado -> FindUsNavHost(
+                            tipoUsuario = estado.tipo,
+                            onSelecionarTipo = { tipoEscolhido ->
+                                sessao = SessaoUiState.Logado(tipoEscolhido)
+                                val uid = FirebaseAuth.getInstance().currentUser?.uid
+                                if (uid != null) {
+                                    escopo.launch { app.container.usuarioRepository.salvarTipo(uid, tipoEscolhido) }
+                                }
+                            },
                             onSair = {
                                 FirebaseAuth.getInstance().signOut()
-                                autenticado = false
+                                sessao = SessaoUiState.Deslogado
                             }
                         )
-                    } else {
-                        TelaLogin(onAutenticado = { autenticado = true })
                     }
                 }
             }
@@ -53,95 +93,17 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun TelaLogin(onAutenticado: () -> Unit) {
-    var email by remember { mutableStateOf("") }
-    var senha by remember { mutableStateOf("") }
-    var status by remember { mutableStateOf("") }
-
-    val auth = FirebaseAuth.getInstance()
-
+private fun TelaCarregando() {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
+        modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = "FINDus", style = MaterialTheme.typography.headlineMedium)
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("E-mail") },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            modifier = Modifier.fillMaxWidth()
+        CircularProgressIndicator()
+        Text(
+            "Carregando...",
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(top = 16.dp)
         )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        OutlinedTextField(
-            value = senha,
-            onValueChange = { senha = it },
-            label = { Text("Senha") },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Button(
-                onClick = {
-                    if (email.isBlank() || senha.isBlank()) {
-                        status = "Preencha e-mail e senha"
-                        return@Button
-                    }
-                    auth.createUserWithEmailAndPassword(email, senha)
-                        .addOnCompleteListener { task ->
-                            if (task.isSuccessful) {
-                                onAutenticado()
-                            } else {
-                                status = "Erro ao cadastrar: ${task.exception?.message}"
-                            }
-                        }
-                },
-                modifier = Modifier.weight(1f)
-            ) {
-                Text("Cadastrar")
-            }
-
-            Button(
-                onClick = {
-                    if (email.isBlank() || senha.isBlank()) {
-                        status = "Preencha e-mail e senha"
-                        return@Button
-                    }
-                    auth.signInWithEmailAndPassword(email, senha)
-                        .addOnCompleteListener { task ->
-                            if (task.isSuccessful) {
-                                onAutenticado()
-                            } else {
-                                status = "Erro ao entrar: ${task.exception?.message}"
-                            }
-                        }
-                },
-                modifier = Modifier.weight(1f)
-            ) {
-                Text("Entrar")
-            }
-        }
-
-        if (status.isNotBlank()) {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(text = status)
-        }
     }
 }
