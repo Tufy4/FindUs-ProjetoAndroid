@@ -64,7 +64,8 @@ fun CadastroVeiculoScreen(onVoltar: () -> Unit) {
                 app.container.veiculoRepository,
                 app.container.telemetriaRepository,
                 app.container.locationHelper,
-                app.container.motoristaRepository
+                app.container.motoristaRepository,
+                app.container.centroRepository
             )
         }
     })

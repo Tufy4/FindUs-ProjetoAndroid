@@ -5,15 +5,18 @@ import androidx.lifecycle.viewModelScope
 import com.example.findus.data.local.entity.MotoristaEntity
 import com.example.findus.data.local.entity.RegistroTelemetriaEntity
 import com.example.findus.data.local.entity.VeiculoEntity
+import com.example.findus.data.repository.CentroDistribuicaoRepository
 import com.example.findus.data.repository.MotoristaRepository
 import com.example.findus.data.repository.TelemetriaRepository
 import com.example.findus.data.repository.VeiculoRepository
 import com.example.findus.domain.RegrasNegocio
+import com.example.findus.location.Coordenada
 import com.example.findus.location.LocationHelper
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -22,7 +25,8 @@ class CadastroVeiculoViewModel(
     private val repository: VeiculoRepository,
     private val telemetriaRepository: TelemetriaRepository,
     private val locationHelper: LocationHelper,
-    private val motoristaRepository: MotoristaRepository
+    private val motoristaRepository: MotoristaRepository,
+    private val centroRepository: CentroDistribuicaoRepository
 ) : ViewModel() {
     private val uid = FirebaseAuth.getInstance().currentUser?.uid
 
@@ -38,7 +42,11 @@ class CadastroVeiculoViewModel(
     fun salvar(veiculo: VeiculoEntity, novo: Boolean) = viewModelScope.launch {
         repository.salvar(veiculo)
         if (novo) {
-            val posicao = locationHelper.obterLocalizacaoOuPadrao()
+            // Veículo novo fica no centro de distribuição (o primeiro cadastrado). Sem centro,
+            // usa a posição do aparelho, que no emulador costuma ser Mountain View (EUA).
+            val centro = centroRepository.observarTodos().first().firstOrNull()
+            val posicao = centro?.let { Coordenada(it.latitude, it.longitude) }
+                ?: locationHelper.obterLocalizacaoOuPadrao()
             telemetriaRepository.registrar(
                 RegistroTelemetriaEntity(veiculoId = veiculo.id, latitude = posicao.latitude, longitude = posicao.longitude)
             )
