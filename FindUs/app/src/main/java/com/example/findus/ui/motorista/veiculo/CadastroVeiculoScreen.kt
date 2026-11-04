@@ -63,7 +63,8 @@ fun CadastroVeiculoScreen(onVoltar: () -> Unit) {
             CadastroVeiculoViewModel(
                 app.container.veiculoRepository,
                 app.container.telemetriaRepository,
-                app.container.locationHelper
+                app.container.locationHelper,
+                app.container.motoristaRepository
             )
         }
     })
@@ -144,7 +145,7 @@ fun CadastroVeiculoScreen(onVoltar: () -> Unit) {
             }
 
             Divider(modifier = Modifier.padding(vertical = 12.dp))
-            Text("Veículos cadastrados", style = MaterialTheme.typography.titleSmall)
+            Text("Seu veículo", style = MaterialTheme.typography.titleSmall)
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(veiculos, key = { it.id }) { veiculo ->
                     Card(

@@ -15,6 +15,9 @@ import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polyline
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 
 data class MarcadorMapa(
     val posicao: Coordenada,
@@ -23,6 +26,25 @@ data class MarcadorMapa(
     val corHex: String = "#1976D2",
     val onClick: (() -> Unit)? = null
 )
+
+/** Contorno de um perímetro de geofencing. */
+data class CirculoMapa(
+    val centro: Coordenada,
+    val raioMetros: Double,
+    val corHex: String
+)
+
+private fun pontosDoCirculo(circulo: CirculoMapa): List<GeoPoint> {
+    val grausLatitude = circulo.raioMetros / 111_320.0
+    val grausLongitude = circulo.raioMetros / (111_320.0 * cos(Math.toRadians(circulo.centro.latitude)))
+    return (0..48).map { passo ->
+        val angulo = 2 * PI * passo / 48
+        GeoPoint(
+            circulo.centro.latitude + grausLatitude * sin(angulo),
+            circulo.centro.longitude + grausLongitude * cos(angulo)
+        )
+    }
+}
 
 private val geoapifyTiles = XYTileSource(
     "GeoapifyOsmBright2x",
@@ -48,7 +70,8 @@ fun MapaOsm(
     linhas: List<List<Coordenada>> = emptyList(),
     centro: Coordenada? = null,
     zoom: Double = 13.0,
-    onToqueMapa: ((Coordenada) -> Unit)? = null
+    onToqueMapa: ((Coordenada) -> Unit)? = null,
+    circulos: List<CirculoMapa> = emptyList()
 ) {
     val jaCentralizou = remember { booleanArrayOf(false) }
 
@@ -80,6 +103,14 @@ fun MapaOsm(
 
                     override fun longPressHelper(ponto: GeoPoint) = false
                 }))
+            }
+
+            circulos.forEach { circulo ->
+                val contorno = Polyline(view)
+                contorno.setPoints(pontosDoCirculo(circulo))
+                contorno.outlinePaint.strokeWidth = 4f
+                contorno.outlinePaint.color = Color.parseColor(circulo.corHex)
+                view.overlays.add(contorno)
             }
 
             (linhas + listOf(linha)).filter { it.size >= 2 }.forEach { pontos ->

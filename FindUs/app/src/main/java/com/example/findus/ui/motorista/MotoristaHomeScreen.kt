@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,7 +32,8 @@ import androidx.compose.ui.unit.dp
 fun MotoristaHomeScreen(
     onVoltar: () -> Unit,
     onCadastroVeiculo: () -> Unit,
-    onRotaEntrega: () -> Unit
+    onRotaEntrega: () -> Unit,
+    onMinhasEntregas: () -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -46,6 +48,12 @@ fun MotoristaHomeScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             CartaoNavegacao(
+                icone = Icons.Filled.ShoppingCart,
+                titulo = "Minhas entregas",
+                descricao = "Veja as entregas atribuídas a você, inicie, conclua e trace a rota",
+                onClick = onMinhasEntregas
+            )
+            CartaoNavegacao(
                 icone = Icons.Filled.Build,
                 titulo = "Cadastro de veículo",
                 descricao = "Informe dados e foto do veículo que você dirige",
@@ -53,8 +61,8 @@ fun MotoristaHomeScreen(
             )
             CartaoNavegacao(
                 icone = Icons.Filled.LocationOn,
-                titulo = "Rota até a entrega",
-                descricao = "Acompanhe o trajeto e a posição em tempo real",
+                titulo = "Rota até um ponto no mapa",
+                descricao = "Toque em qualquer ponto do mapa para traçar a rota a partir da sua posição",
                 onClick = onRotaEntrega
             )
         }
