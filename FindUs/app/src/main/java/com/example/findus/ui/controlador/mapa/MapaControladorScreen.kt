@@ -44,11 +44,14 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.findus.FindUsApplication
 import com.example.findus.data.enum.EstadoPortas
+import com.example.findus.data.enum.rotulo
+import com.example.findus.data.local.entity.EntregaEntity
 import com.example.findus.data.local.entity.RegistroTelemetriaEntity
 import com.example.findus.data.local.entity.VeiculoEntity
 import com.example.findus.location.Coordenada
+import com.example.findus.location.OrigemPerimetro
 import com.example.findus.ui.common.FotoVeiculo
-import com.example.findus.location.TipoEventoGeofence
+import com.example.findus.ui.map.CirculoMapa
 import com.example.findus.ui.map.MapaOsm
 import com.example.findus.ui.map.MarcadorMapa
 import kotlinx.coroutines.launch
@@ -62,9 +65,11 @@ fun MapaControladorScreen(onVoltar: () -> Unit, onVerRota: (String) -> Unit) {
             ControladorViewModel(
                 veiculoRepository = app.container.veiculoRepository,
                 telemetriaRepository = app.container.telemetriaRepository,
+                entregaRepository = app.container.entregaRepository,
                 telemetriaSimuladorManager = app.container.telemetriaSimuladorManager,
                 geofenceNotificador = app.container.geofenceNotificador,
-                reverseGeocoder = app.container.reverseGeocoder
+                reverseGeocoder = app.container.reverseGeocoder,
+                perimetros = app.container.perimetrosMonitorados
             )
         }
     })
@@ -73,6 +78,8 @@ fun MapaControladorScreen(onVoltar: () -> Unit, onVerRota: (String) -> Unit) {
     val telemetrias by viewModel.ultimasTelemetrias.collectAsStateWithLifecycle()
     val enderecoSelecionado by viewModel.enderecoSelecionado.collectAsStateWithLifecycle()
     val trajetos by viewModel.trajetos.collectAsStateWithLifecycle()
+    val entregasAtivas by viewModel.entregasAtivas.collectAsStateWithLifecycle()
+    val perimetros by viewModel.perimetros.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
     val escopo = rememberCoroutineScope()
@@ -80,11 +87,7 @@ fun MapaControladorScreen(onVoltar: () -> Unit, onVerRota: (String) -> Unit) {
 
     LaunchedEffect(Unit) {
         viewModel.eventosGeofence.collect { evento ->
-            val veiculo = veiculos.find { it.id == evento.veiculoId }
-            val acao = if (evento.tipo == TipoEventoGeofence.ENTROU) "entrou no" else "saiu do"
-            escopo.launch {
-                snackbarHostState.showSnackbar("Veículo ${veiculo?.placa ?: evento.veiculoId} $acao centro de distribuição")
-            }
+            escopo.launch { snackbarHostState.showSnackbar(evento.mensagem()) }
         }
     }
 
@@ -98,7 +101,28 @@ fun MapaControladorScreen(onVoltar: () -> Unit, onVerRota: (String) -> Unit) {
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            val marcadores = telemetrias.map { registro ->
+            // Centros de distribuição (azul) e pontos de entrega ativos (laranja) por baixo dos veículos.
+            val marcadoresLocais = perimetros
+                .filter { it.origem != OrigemPerimetro.PERSONALIZADO }
+                .map { perimetro ->
+                    MarcadorMapa(
+                        posicao = perimetro.centro,
+                        titulo = perimetro.nome,
+                        corHex = if (perimetro.origem == OrigemPerimetro.CENTRO_DISTRIBUICAO) "#1565C0" else "#EF6C00"
+                    )
+                }
+            val circulos = perimetros.map { perimetro ->
+                CirculoMapa(
+                    centro = perimetro.centro,
+                    raioMetros = perimetro.raioMetros,
+                    corHex = when (perimetro.origem) {
+                        OrigemPerimetro.CENTRO_DISTRIBUICAO -> "#1565C0"
+                        OrigemPerimetro.PONTO_ENTREGA -> "#EF6C00"
+                        OrigemPerimetro.PERSONALIZADO -> "#6A1B9A"
+                    }
+                )
+            }
+            val marcadoresVeiculos = telemetrias.map { registro ->
                 val veiculo = veiculos.find { it.id == registro.veiculoId }
                 MarcadorMapa(
                     posicao = Coordenada(registro.latitude, registro.longitude),
@@ -113,11 +137,12 @@ fun MapaControladorScreen(onVoltar: () -> Unit, onVerRota: (String) -> Unit) {
             }
             Box(modifier = Modifier.fillMaxWidth().weight(1f).clipToBounds()) {
                 MapaOsm(
-                    marcadores = marcadores,
+                    marcadores = marcadoresLocais + marcadoresVeiculos,
                     modifier = Modifier.fillMaxSize(),
                     linhas = trajetos.values.toList(),
-                    centro = marcadores.firstOrNull()?.posicao,
-                    zoom = 12.0
+                    centro = marcadoresVeiculos.firstOrNull()?.posicao ?: marcadoresLocais.firstOrNull()?.posicao,
+                    zoom = 12.0,
+                    circulos = circulos
                 )
             }
 
@@ -134,6 +159,7 @@ fun MapaControladorScreen(onVoltar: () -> Unit, onVerRota: (String) -> Unit) {
                     LinhaTelemetriaVeiculo(
                         veiculo = veiculo,
                         telemetria = telemetria,
+                        entrega = entregasAtivas.find { it.veiculoId == veiculo.id },
                         simulacaoAtiva = trajetos.containsKey(veiculo.id),
                         onIniciarSimulacao = { viewModel.iniciarSimulacao(veiculo.id) },
                         onPararSimulacao = { viewModel.pararSimulacao(veiculo.id) },
@@ -160,6 +186,7 @@ fun MapaControladorScreen(onVoltar: () -> Unit, onVerRota: (String) -> Unit) {
 private fun LinhaTelemetriaVeiculo(
     veiculo: VeiculoEntity,
     telemetria: RegistroTelemetriaEntity?,
+    entrega: EntregaEntity?,
     simulacaoAtiva: Boolean,
     onIniciarSimulacao: () -> Unit,
     onPararSimulacao: () -> Unit,
@@ -183,6 +210,10 @@ private fun LinhaTelemetriaVeiculo(
                 Text("Sem telemetria recente", style = MaterialTheme.typography.bodySmall)
             }
             Text("Status: ${veiculo.status}", style = MaterialTheme.typography.bodySmall)
+            Text(
+                if (entrega != null) "Entrega: ${entrega.descricao} (${entrega.status.rotulo()})" else "Sem entrega atribuída",
+                style = MaterialTheme.typography.bodySmall
+            )
 
             Column {
                 Button(onClick = if (simulacaoAtiva) onPararSimulacao else onIniciarSimulacao) {

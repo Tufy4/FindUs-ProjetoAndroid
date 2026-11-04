@@ -7,10 +7,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -28,7 +34,15 @@ import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ControladorHomeScreen(onVoltar: () -> Unit, onMapaTelemetria: () -> Unit, onCadastroMotoristas: () -> Unit) {
+fun ControladorHomeScreen(
+    onVoltar: () -> Unit,
+    onMapaTelemetria: () -> Unit,
+    onCadastroMotoristas: () -> Unit,
+    onEntregas: () -> Unit,
+    onCentros: () -> Unit,
+    onPerimetros: () -> Unit,
+    onGrupos: () -> Unit
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -38,9 +52,15 @@ fun ControladorHomeScreen(onVoltar: () -> Unit, onMapaTelemetria: () -> Unit, on
         }
     ) { padding ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
+            modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            CartaoNavegacao(
+                icone = Icons.Filled.ShoppingCart,
+                titulo = "Entregas",
+                descricao = "Crie entregas e atribua a um motorista e veículo",
+                onClick = onEntregas
+            )
             CartaoNavegacao(
                 icone = Icons.Filled.LocationOn,
                 titulo = "Mapa e telemetria da frota",
@@ -52,6 +72,24 @@ fun ControladorHomeScreen(onVoltar: () -> Unit, onMapaTelemetria: () -> Unit, on
                 titulo = "Cadastro de motoristas",
                 descricao = "Gerencie os motoristas vinculados à frota",
                 onClick = onCadastroMotoristas
+            )
+            CartaoNavegacao(
+                icone = Icons.Filled.Home,
+                titulo = "Centros de distribuição",
+                descricao = "Locais de saída das entregas, também monitorados por geofencing",
+                onClick = onCentros
+            )
+            CartaoNavegacao(
+                icone = Icons.Filled.Place,
+                titulo = "Perímetros (geofencing)",
+                descricao = "Avisos de entrada e saída para um veículo ou um grupo",
+                onClick = onPerimetros
+            )
+            CartaoNavegacao(
+                icone = Icons.Filled.Menu,
+                titulo = "Grupos de veículos",
+                descricao = "Agrupe veículos para monitorá-los juntos",
+                onClick = onGrupos
             )
         }
     }

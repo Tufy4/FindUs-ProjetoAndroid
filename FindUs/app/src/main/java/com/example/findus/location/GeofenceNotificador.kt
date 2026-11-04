@@ -31,14 +31,16 @@ class GeofenceNotificador(private val context: Context) {
             PackageManager.PERMISSION_GRANTED
         if (semPermissao) return
 
-        val acao = if (evento.tipo == TipoEventoGeofence.ENTROU) "entrou no" else "saiu do"
+        val mensagem = evento.mensagem()
         val notificacao = NotificationCompat.Builder(context, CANAL)
             .setSmallIcon(android.R.drawable.ic_dialog_map)
             .setContentTitle("Perímetro monitorado")
-            .setContentText("Veículo ${evento.veiculoId} $acao centro de distribuição")
+            .setContentText(mensagem)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(mensagem))
             .setAutoCancel(true)
             .build()
 
-        NotificationManagerCompat.from(context).notify(evento.veiculoId.hashCode(), notificacao)
+        // Um id por veículo e perímetro, para um aviso não substituir o de outro perímetro.
+        NotificationManagerCompat.from(context).notify((evento.veiculoId + evento.chavePerimetro).hashCode(), notificacao)
     }
 }
