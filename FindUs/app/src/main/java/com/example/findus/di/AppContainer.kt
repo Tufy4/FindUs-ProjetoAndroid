@@ -88,9 +88,10 @@ class AppContainer(context: Context) {
         centroRepository.observarTodos(),
         entregaRepository.observarTodos(),
         perimetroRepository.observarTodos(),
-        grupoRepository.observarTodos()
-    ) { centros, entregas, perimetros, grupos ->
-        montarPerimetros(centros, entregas, perimetros, grupos)
+        grupoRepository.observarTodos(),
+        telemetriaSimuladorManager.perimetrosDaSimulacao
+    ) { centros, entregas, perimetros, grupos, daSimulacao ->
+        montarPerimetros(centros, entregas, perimetros, grupos) + daSimulacao.values
     }.stateIn(escopoApp, SharingStarted.Eagerly, emptyList())
 
     init {
