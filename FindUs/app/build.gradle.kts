@@ -10,17 +10,18 @@ val localProperties = Properties().apply {
 
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     id("com.google.gms.google-services")
 }
 android {
     namespace = "com.example.findus"
-    compileSdk = 37
+    compileSdk = 35
     defaultConfig {
         applicationId = "com.example.findus"
         minSdk = 29
-        targetSdk = 37
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -54,7 +55,7 @@ kotlin {
     }
 }
 dependencies {
-    implementation(platform("com.google.firebase:firebase-bom:34.17.0"))
+    implementation(platform("com.google.firebase:firebase-bom:33.9.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-firestore")
     implementation(libs.androidx.core.ktx)

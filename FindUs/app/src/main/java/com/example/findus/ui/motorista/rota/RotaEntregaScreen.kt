@@ -28,17 +28,21 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.findus.FindUsApplication
+import com.example.findus.location.Coordenada
 import com.example.findus.ui.map.MapaOsm
 import com.example.findus.ui.map.MarcadorMapa
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RotaEntregaScreen(onVoltar: () -> Unit) {
+fun RotaEntregaScreen(onVoltar: () -> Unit, destinoEntrega: Coordenada? = null) {
     val context = LocalContext.current
     val app = context.applicationContext as FindUsApplication
     val viewModel: RotaEntregaViewModel = viewModel(factory = viewModelFactory {
-        initializer { RotaEntregaViewModel(app.container.locationHelper, app.container.rotaService) }
+        initializer { RotaEntregaViewModel(app.container.locationHelper, app.container.rotaService, destinoEntrega) }
     })
+    // Aberta a partir de uma entrega, o destino é fixo; aberta pelo menu, o motorista escolhe no mapa.
+    val destinoFixo = destinoEntrega != null
+    val escolherDestino: (Coordenada) -> Unit = { viewModel.definirDestino(it) }
     val posicaoAtual by viewModel.posicaoAtual.collectAsStateWithLifecycle()
     val destino by viewModel.destino.collectAsStateWithLifecycle()
     val rota by viewModel.rota.collectAsStateWithLifecycle()
@@ -51,7 +55,7 @@ fun RotaEntregaScreen(onVoltar: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Rota até a entrega") },
+                title = { Text(if (destinoFixo) "Rota até a entrega" else "Rota até um ponto") },
                 navigationIcon = { IconButton(onClick = onVoltar) { Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar") } }
             )
         }
@@ -66,7 +70,7 @@ fun RotaEntregaScreen(onVoltar: () -> Unit) {
                 modifier = Modifier.fillMaxSize(),
                 linha = rota,
                 centro = posicaoAtual,
-                onToqueMapa = { viewModel.definirDestino(it) }
+                onToqueMapa = if (destinoFixo) null else escolherDestino
             )
 
             if (destino == null) {
@@ -75,7 +79,7 @@ fun RotaEntregaScreen(onVoltar: () -> Unit) {
                     tonalElevation = 4.dp
                 ) {
                     Box(Modifier.padding(12.dp)) {
-                        Text("Toque no mapa para escolher o ponto de entrega", style = MaterialTheme.typography.bodyMedium)
+                        Text("Toque no mapa para escolher o destino da rota", style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             }

@@ -44,6 +44,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.findus.FindUsApplication
 import com.example.findus.data.local.entity.VeiculoEntity
+import com.example.findus.domain.RegrasNegocio
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -107,7 +108,8 @@ fun MotoristaScreen(onVoltar: () -> Unit) {
                     )
                     ExposedDropdownMenu(expanded = expandido, onDismissRequest = { expandido = false }) {
                         DropdownMenuItem(text = { Text("Nenhum veículo") }, onClick = { veiculoSelecionado = null; expandido = false })
-                        veiculos.forEach { veiculo ->
+                        // Só aparecem veículos que não estão vinculados a outro motorista.
+                        RegrasNegocio.veiculosLivresParaMotorista(veiculos, motoristas, editandoId).forEach { veiculo ->
                             DropdownMenuItem(
                                 text = { Text("${veiculo.placa} · ${veiculo.modelo}") },
                                 onClick = { veiculoSelecionado = veiculo; expandido = false }
