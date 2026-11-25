@@ -53,7 +53,12 @@ fun MotoristaScreen(onVoltar: () -> Unit) {
     val app = context.applicationContext as FindUsApplication
     val viewModel: MotoristaViewModel = viewModel(factory = viewModelFactory {
         initializer {
-            MotoristaViewModel(app.container.motoristaRepository, app.container.veiculoRepository, app.container.usuarioRepository)
+            MotoristaViewModel(
+                app.container.motoristaRepository,
+                app.container.veiculoRepository,
+                app.container.usuarioRepository,
+                app.container.entregaRepository
+            )
         }
     })
     val motoristas by viewModel.motoristas.collectAsStateWithLifecycle()
@@ -147,15 +152,15 @@ fun MotoristaScreen(onVoltar: () -> Unit) {
                     onClick = {
                         if (editando) {
                             val motoristaExistente = motoristas.find { it.id == editandoId } ?: return@Button
-                            viewModel.atualizar(
+                            val salvou = viewModel.atualizar(
                                 motoristaExistente.copy(
-                                    nome = nome,
-                                    cnh = cnh,
-                                    telefone = telefone,
+                                    nome = nome.trim(),
+                                    cnh = cnh.trim(),
+                                    telefone = telefone.trim(),
                                     veiculoId = veiculoSelecionado?.id
                                 )
                             )
-                            limparFormulario()
+                            if (salvou) limparFormulario()
                         } else {
                             viewModel.cadastrarNovo(
                                 context = context,

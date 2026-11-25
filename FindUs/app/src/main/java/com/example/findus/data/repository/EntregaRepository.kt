@@ -20,6 +20,8 @@ class EntregaRepository(
 
     suspend fun entregaAtivaDoVeiculo(veiculoId: String): EntregaEntity? = dao.buscarAtivaDoVeiculo(veiculoId)
 
+    suspend fun buscarPorId(id: String): EntregaEntity? = dao.buscarPorId(id)
+
     suspend fun salvar(entrega: EntregaEntity) {
         dao.inserir(entrega)
         remoto.enviar(entrega.id, entrega)

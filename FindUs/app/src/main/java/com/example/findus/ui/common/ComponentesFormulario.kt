@@ -168,7 +168,8 @@ fun MensagemErro(mensagem: String?) {
 
 /** Texto do endereço, ou as coordenadas quando o endereço não foi encontrado. */
 fun descreverLocal(endereco: String, latitude: Double, longitude: Double): String =
-    endereco.ifBlank { "%.5f, %.5f".format(latitude, longitude) }
+    // Locale.US: no padrão pt-BR o separador decimal é vírgula e "-21,77380, -48,18418" fica ambíguo.
+    endereco.ifBlank { String.format(Locale.US, "%.5f, %.5f", latitude, longitude) }
 
 fun formatarDataHora(instante: Long): String =
     SimpleDateFormat("dd/MM HH:mm", Locale.getDefault()).format(Date(instante))

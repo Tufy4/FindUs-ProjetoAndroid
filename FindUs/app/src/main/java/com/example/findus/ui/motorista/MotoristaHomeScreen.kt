@@ -50,7 +50,7 @@ fun MotoristaHomeScreen(
             CartaoNavegacao(
                 icone = Icons.Filled.ShoppingCart,
                 titulo = "Minhas entregas",
-                descricao = "Veja as entregas atribuídas a você, inicie, conclua e trace a rota",
+                descricao = "Veja as entregas atribuídas a você, inicie, conclua, trace a rota e simule o percurso",
                 onClick = onMinhasEntregas
             )
             CartaoNavegacao(

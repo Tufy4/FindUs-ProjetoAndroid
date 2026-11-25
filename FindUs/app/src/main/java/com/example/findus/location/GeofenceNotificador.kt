@@ -23,8 +23,17 @@ class GeofenceNotificador(private val context: Context) {
         NotificationManagerCompat.from(context).createNotificationChannel(canal)
     }
 
+    /**
+     * Notificação do sistema é recurso do controlador (manual do curso). O aparelho do motorista
+     * também avalia o geofencing, mas recebia aviso de todos os veículos da frota. Os eventos
+     * continuam em [eventos] para as telas que mostram avisos dentro do app.
+     */
+    @Volatile
+    var notificacoesDoSistemaAtivas: Boolean = true
+
     fun notificar(evento: EventoGeofence) {
         _eventos.tryEmit(evento)
+        if (!notificacoesDoSistemaAtivas) return
 
         val semPermissao = Build.VERSION.SDK_INT >= 33 &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=

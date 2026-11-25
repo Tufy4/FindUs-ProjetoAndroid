@@ -3,6 +3,7 @@ package com.example.findus.domain
 import com.example.findus.data.enum.StatusEntrega
 import com.example.findus.data.enum.StatusOperacionalVeiculo
 import com.example.findus.data.enum.TipoAlvoPerimetro
+import com.example.findus.data.enum.rotulo
 import com.example.findus.data.local.entity.CentroDistribuicaoEntity
 import com.example.findus.data.local.entity.EntregaEntity
 import com.example.findus.data.local.entity.GrupoVeiculoEntity
@@ -50,7 +51,14 @@ object RegrasNegocio {
         motorista == null -> "Escolha o motorista responsável"
         veiculo == null -> "O motorista ${motorista.nome} não tem veículo vinculado"
         !veiculoPodeReceberEntrega(veiculo) ->
-            "O veículo ${veiculo.placa} está ${veiculo.status} e não pode receber entregas"
+            "O veículo ${veiculo.placa} está ${veiculo.status.rotulo().lowercase()} e não pode receber entregas"
+        else -> null
+    }
+
+    /** Ao salvar a edição, a entrega pode ter sido iniciada pelo motorista enquanto o formulário estava aberto. */
+    fun validarEdicaoEntrega(atual: EntregaEntity?): String? = when {
+        atual == null -> null
+        !podeEditarEntrega(atual) -> "A entrega já está ${atual.status.rotulo().lowercase()} e não pode mais ser editada"
         else -> null
     }
 
@@ -102,6 +110,50 @@ object RegrasNegocio {
         local == null -> "Toque no mapa para escolher o centro do perímetro"
         raioMetros == null || raioMetros <= 0.0 -> "Informe um raio válido, em metros"
         tipoAlvo != TipoAlvoPerimetro.TODOS && alvoId == null -> "Escolha o veículo ou o grupo monitorado"
+        else -> null
+    }
+
+    fun validarVeiculo(placa: String, modelo: String): String? = when {
+        placa.isBlank() -> "Informe a placa do veículo"
+        modelo.isBlank() -> "Informe o modelo do veículo"
+        else -> null
+    }
+
+    /**
+     * "Em rota" é controlado pelas entregas (iniciar/concluir) e pela simulação; no
+     * cadastro o motorista só escolhe entre estes.
+     */
+    val statusEscolhiveisNoCadastro = listOf(
+        StatusOperacionalVeiculo.DISPONIVEL,
+        StatusOperacionalVeiculo.MANUTENCAO,
+        StatusOperacionalVeiculo.INATIVO
+    )
+
+    fun validarMotorista(nome: String, cnh: String): String? = when {
+        nome.isBlank() -> "Informe o nome do motorista"
+        cnh.isBlank() -> "Informe a CNH do motorista"
+        else -> null
+    }
+
+    /**
+     * A entrega guarda o veículo do motorista no momento da atribuição. Trocar o veículo
+     * com entrega pendente ou em rota deixaria a entrega apontando para o veículo antigo.
+     */
+    fun validarTrocaVeiculo(
+        motorista: MotoristaEntity,
+        novoVeiculoId: String?,
+        entregas: List<EntregaEntity>
+    ): String? =
+        if (motorista.veiculoId != novoVeiculoId && entregas.any { it.motoristaId == motorista.id && entregaAtiva(it) }) {
+            "O motorista tem entrega pendente ou em rota. Conclua ou cancele antes de trocar o veículo"
+        } else {
+            null
+        }
+
+    /** O motorista só simula o percurso de uma entrega que ainda está ativa. */
+    fun validarSimulacaoEntrega(entrega: EntregaEntity, entregasDoMotorista: List<EntregaEntity>): String? = when {
+        !entregaAtiva(entrega) -> "Esta entrega já foi ${entrega.status.rotulo().lowercase()}"
+        entrega.status == StatusEntrega.PENDENTE -> validarInicio(entrega, entregasDoMotorista)
         else -> null
     }
 

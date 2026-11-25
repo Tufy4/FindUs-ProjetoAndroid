@@ -65,12 +65,16 @@ class EntregasViewModel(
     ) {
         val destino = local.coordenada.value
         val veiculo = motorista?.veiculoId?.let { id -> veiculos.value.find { it.id == id } }
-        val mensagem = RegrasNegocio.validarEntrega(descricao, centro, destino, motorista, veiculo)
+        // Versão atual da entrega: o motorista pode tê-la iniciado depois que o formulário abriu,
+        // e salvar a cópia antiga voltava o status para "pendente".
+        val atual = existente?.let { e -> entregas.value.find { it.id == e.id } ?: e }
+        val mensagem = RegrasNegocio.validarEdicaoEntrega(atual)
+            ?: RegrasNegocio.validarEntrega(descricao, centro, destino, motorista, veiculo)
         if (mensagem != null || centro == null || destino == null || motorista == null || veiculo == null) {
             _erro.value = mensagem
             return
         }
-        val entrega = (existente ?: EntregaEntity()).copy(
+        val entrega = (atual ?: EntregaEntity()).copy(
             descricao = descricao.trim(),
             centroDistribuicaoId = centro.id,
             enderecoDestino = local.enderecoParaSalvar(),

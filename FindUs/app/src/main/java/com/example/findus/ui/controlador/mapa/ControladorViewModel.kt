@@ -13,6 +13,7 @@ import com.example.findus.location.GeofenceNotificador
 import com.example.findus.location.PerimetroMonitorado
 import com.example.findus.location.ReverseGeocoder
 import com.example.findus.telemetry.TelemetriaSimuladorManager
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -50,8 +51,15 @@ class ControladorViewModel(
 
     fun pararSimulacao(veiculoId: String) = telemetriaSimuladorManager.parar(veiculoId)
 
-    fun consultarEndereco(latitude: Double, longitude: Double) = viewModelScope.launch {
+    private var consultaEndereco: Job? = null
+
+    // Cancela a consulta anterior: tocando em dois veículos seguidos, a resposta mais lenta
+    // do primeiro podia chegar depois e mostrar o endereço errado no diálogo do segundo.
+    fun consultarEndereco(latitude: Double, longitude: Double) {
+        consultaEndereco?.cancel()
         _enderecoSelecionado.value = null
-        _enderecoSelecionado.value = reverseGeocoder.endereco(latitude, longitude) ?: "Endereço não encontrado."
+        consultaEndereco = viewModelScope.launch {
+            _enderecoSelecionado.value = reverseGeocoder.endereco(latitude, longitude) ?: "Endereço não encontrado."
+        }
     }
 }

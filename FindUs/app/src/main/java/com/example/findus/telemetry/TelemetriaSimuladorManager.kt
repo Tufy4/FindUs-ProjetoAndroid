@@ -17,6 +17,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** Acima disso, a posição do aparelho é considerada fora da região da simulação. */
@@ -72,19 +73,21 @@ class TelemetriaSimuladorManager(
                 origem = primeiroCentro?.let { Coordenada(it.latitude, it.longitude) } ?: origemDoAparelho()
                 destino = RotasSimuladas.destinoPadrao
                 if (primeiroCentro == null) {
-                    _perimetrosDaSimulacao.value += veiculoId to PerimetroMonitorado(
+                    _perimetrosDaSimulacao.update { it + (veiculoId to PerimetroMonitorado(
                         chave = "partida:$veiculoId",
                         nome = "Ponto de partida da simulação",
                         origem = OrigemPerimetro.CENTRO_DISTRIBUICAO,
                         centro = origem,
                         raioMetros = 1000.0,
                         veiculoIds = setOf(veiculoId)
-                    )
+                    )) }
                 }
             }
 
             val trajeto = RotasSimuladas.trajeto(rotaService, origem, destino)
-            _trajetos.value += veiculoId to trajeto.map { Coordenada(it.latitude, it.longitude) }
+            // update {} é atômico: vários veículos simulados ao mesmo tempo (Dispatchers.Default,
+            // várias threads) faziam "value += ..." concorrente e podiam perder trajetos.
+            _trajetos.update { it + (veiculoId to trajeto.map { ponto -> Coordenada(ponto.latitude, ponto.longitude) }) }
             try {
                 TelemetriaSimulador(
                     veiculoId = veiculoId,
@@ -94,8 +97,8 @@ class TelemetriaSimuladorManager(
                     liberarVeiculoAoFinal = !viaEntrega
                 ).executar()
             } finally {
-                _trajetos.value -= veiculoId
-                _perimetrosDaSimulacao.value -= veiculoId
+                _trajetos.update { it - veiculoId }
+                _perimetrosDaSimulacao.update { it - veiculoId }
             }
         }
     }

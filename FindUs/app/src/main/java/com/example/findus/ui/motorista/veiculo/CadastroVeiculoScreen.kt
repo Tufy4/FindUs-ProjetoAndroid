@@ -6,10 +6,10 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -29,29 +29,32 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.findus.FindUsApplication
-import com.example.findus.camera.FotoBase64
 import com.example.findus.camera.FotoCaptureUtils
 import com.example.findus.data.enum.StatusOperacionalVeiculo
 import com.example.findus.data.enum.TipoVeiculo
+import com.example.findus.data.enum.rotulo
 import com.example.findus.data.local.entity.VeiculoEntity
+import com.example.findus.domain.RegrasNegocio
 import com.example.findus.ui.common.EnumDropdown
 import com.example.findus.ui.common.FotoVeiculo
+import com.example.findus.ui.common.MensagemErro
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,22 +68,43 @@ fun CadastroVeiculoScreen(onVoltar: () -> Unit) {
                 app.container.telemetriaRepository,
                 app.container.locationHelper,
                 app.container.motoristaRepository,
-                app.container.centroRepository
+                app.container.centroRepository,
+                app.container.fotoArmazenamento,
+                app.container.entregaRepository
             )
         }
     })
     val veiculos by viewModel.veiculos.collectAsStateWithLifecycle()
+    val erro by viewModel.erro.collectAsStateWithLifecycle()
+    val processandoFoto by viewModel.processandoFoto.collectAsStateWithLifecycle()
+    val fotoCapturada by viewModel.fotoCapturada.collectAsStateWithLifecycle()
 
-    var veiculoEmEdicao by remember { mutableStateOf<VeiculoEntity?>(null) }
-    var placa by remember { mutableStateOf("") }
-    var modelo by remember { mutableStateOf("") }
-    var tipo by remember { mutableStateOf(TipoVeiculo.CAMINHAO) }
-    var status by remember { mutableStateOf(StatusOperacionalVeiculo.DISPONIVEL) }
-    var fotoBase64 by remember { mutableStateOf<String?>(null) }
-    var uriPendente by remember { mutableStateOf<Uri?>(null) }
+    // rememberSaveable: o app de câmera costuma recriar a Activity (rotação ou falta de memória).
+    // Com remember, o URI da foto e o formulário se perdiam e a foto tirada era descartada.
+    var veiculoEmEdicaoId by rememberSaveable { mutableStateOf<String?>(null) }
+    var placa by rememberSaveable { mutableStateOf("") }
+    var modelo by rememberSaveable { mutableStateOf("") }
+    var tipo by rememberSaveable { mutableStateOf(TipoVeiculo.CAMINHAO) }
+    var status by rememberSaveable { mutableStateOf(StatusOperacionalVeiculo.DISPONIVEL) }
+    var fotoArquivo by rememberSaveable { mutableStateOf<String?>(null) }
+    var uriPendente by rememberSaveable { mutableStateOf<Uri?>(null) }
+
+    LaunchedEffect(fotoCapturada) {
+        fotoCapturada?.let {
+            fotoArquivo = it
+            viewModel.consumirFotoCapturada()
+        }
+    }
+
+    val veiculoEmEdicao = veiculoEmEdicaoId?.let { id -> veiculos.find { it.id == id } }
+    val statusControladoPelaEntrega = status == StatusOperacionalVeiculo.EM_ROTA
 
     val lancadorCamera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { sucesso ->
-        if (sucesso) fotoBase64 = uriPendente?.let { FotoBase64.paraBase64(context, it) }
+        val uri = uriPendente
+        if (sucesso && uri != null) {
+            viewModel.processarFoto(uri)
+        }
+        uriPendente = null
     }
     val lancadorPermissaoCamera = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedida ->
         if (concedida) {
@@ -91,8 +115,9 @@ fun CadastroVeiculoScreen(onVoltar: () -> Unit) {
     }
 
     fun limparFormulario() {
-        veiculoEmEdicao = null; placa = ""; modelo = ""; tipo = TipoVeiculo.CAMINHAO
-        status = StatusOperacionalVeiculo.DISPONIVEL; fotoBase64 = null
+        veiculoEmEdicaoId = null; placa = ""; modelo = ""; tipo = TipoVeiculo.CAMINHAO
+        status = StatusOperacionalVeiculo.DISPONIVEL; fotoArquivo = null
+        viewModel.limparErro()
     }
 
     Scaffold(
@@ -113,16 +138,41 @@ fun CadastroVeiculoScreen(onVoltar: () -> Unit) {
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                OutlinedTextField(value = placa, onValueChange = { placa = it }, label = { Text("Placa") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = modelo, onValueChange = { modelo = it }, label = { Text("Modelo") }, modifier = Modifier.fillMaxWidth())
-                EnumDropdown("Tipo", TipoVeiculo.entries.toTypedArray(), tipo, { tipo = it }, Modifier.fillMaxWidth())
-                EnumDropdown("Status", StatusOperacionalVeiculo.entries.toTypedArray(), status, { status = it }, Modifier.fillMaxWidth())
+                OutlinedTextField(value = placa, onValueChange = { placa = it }, label = { Text("Placa") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = modelo, onValueChange = { modelo = it }, label = { Text("Modelo") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                EnumDropdown(
+                    label = "Tipo",
+                    opcoes = TipoVeiculo.entries.toTypedArray(),
+                    selecionado = tipo,
+                    onSelecionar = { tipo = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    rotulo = { it.rotulo() }
+                )
+                EnumDropdown(
+                    label = if (statusControladoPelaEntrega) "Status (definido pela entrega em andamento)" else "Status",
+                    opcoes = RegrasNegocio.statusEscolhiveisNoCadastro.toTypedArray(),
+                    selecionado = status,
+                    onSelecionar = { status = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    rotulo = { it.rotulo() },
+                    habilitado = !statusControladoPelaEntrega
+                )
 
-                OutlinedButton(onClick = { lancadorPermissaoCamera.launch(Manifest.permission.CAMERA) }) {
-                    Text(if (fotoBase64 == null) "Tirar foto do veículo" else "Tirar outra foto")
+                OutlinedButton(
+                    onClick = { lancadorPermissaoCamera.launch(Manifest.permission.CAMERA) },
+                    enabled = !processandoFoto
+                ) {
+                    Text(
+                        when {
+                            processandoFoto -> "Processando foto…"
+                            fotoArquivo == null -> "Tirar foto do veículo"
+                            else -> "Tirar outra foto"
+                        }
+                    )
                 }
-                FotoVeiculo(fotoBase64, Modifier.fillMaxWidth().height(180.dp))
+                FotoVeiculo(fotoArquivo, Modifier.fillMaxWidth().height(180.dp))
 
+                MensagemErro(erro)
                 Button(
                     onClick = {
                         val entidade = veiculoEmEdicao?.copy(
@@ -130,19 +180,22 @@ fun CadastroVeiculoScreen(onVoltar: () -> Unit) {
                             modelo = modelo,
                             tipo = tipo,
                             status = status,
-                            fotoBase64 = fotoBase64
+                            fotoArquivo = fotoArquivo
                         ) ?: VeiculoEntity(
                             placa = placa,
                             modelo = modelo,
                             tipo = tipo,
-                            fotoBase64 = fotoBase64,
+                            fotoArquivo = fotoArquivo,
                             status = status
                         )
-                        viewModel.salvar(entidade, novo = veiculoEmEdicao == null)
-                        limparFormulario()
+                        if (viewModel.salvar(entidade, novo = veiculoEmEdicao == null)) limparFormulario()
                     },
+                    enabled = !processandoFoto,
                     modifier = Modifier.fillMaxWidth()
                 ) { Text(if (veiculoEmEdicao == null) "Cadastrar veículo" else "Salvar alterações") }
+                if (veiculoEmEdicao != null) {
+                    TextButton(onClick = { limparFormulario() }, modifier = Modifier.fillMaxWidth()) { Text("Cancelar edição") }
+                }
             }
 
             Divider(modifier = Modifier.padding(vertical = 12.dp))
@@ -152,12 +205,13 @@ fun CadastroVeiculoScreen(onVoltar: () -> Unit) {
                     Card(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                         onClick = {
-                            veiculoEmEdicao = veiculo
+                            viewModel.limparErro()
+                            veiculoEmEdicaoId = veiculo.id
                             placa = veiculo.placa
                             modelo = veiculo.modelo
                             tipo = veiculo.tipo
                             status = veiculo.status
-                            fotoBase64 = veiculo.fotoBase64
+                            fotoArquivo = veiculo.fotoArquivo
                         }
                     ) {
                         Row(
@@ -165,10 +219,10 @@ fun CadastroVeiculoScreen(onVoltar: () -> Unit) {
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            FotoVeiculo(veiculo.fotoBase64, Modifier.size(64.dp))
+                            FotoVeiculo(veiculo.fotoArquivo, Modifier.size(64.dp))
                             Column {
                                 Text("${veiculo.placa} · ${veiculo.modelo}", style = MaterialTheme.typography.titleMedium)
-                                Text("${veiculo.tipo} · ${veiculo.status}", style = MaterialTheme.typography.bodySmall)
+                                Text("${veiculo.tipo.rotulo()} · ${veiculo.status.rotulo()}", style = MaterialTheme.typography.bodySmall)
                             }
                         }
                     }

@@ -119,7 +119,7 @@ fun EntregasScreen(onVoltar: () -> Unit) {
                 when {
                     motorista == null -> "O veículo da entrega é o veículo vinculado ao motorista."
                     veiculoDoMotorista == null -> "Este motorista não tem veículo vinculado."
-                    else -> "Veículo: ${veiculoDoMotorista.placa} · ${veiculoDoMotorista.modelo} (${veiculoDoMotorista.status})"
+                    else -> "Veículo: ${veiculoDoMotorista.placa} · ${veiculoDoMotorista.modelo} (${veiculoDoMotorista.status.rotulo()})"
                 },
                 style = MaterialTheme.typography.bodySmall
             )

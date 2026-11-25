@@ -23,6 +23,9 @@ interface EntregaDao {
     )
     suspend fun buscarAtivaDoVeiculo(veiculoId: String): EntregaEntity?
 
+    @Query("SELECT * FROM entregas WHERE id = :id")
+    suspend fun buscarPorId(id: String): EntregaEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun inserir(entrega: EntregaEntity)
 

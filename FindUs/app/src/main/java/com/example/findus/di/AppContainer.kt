@@ -1,6 +1,8 @@
 package com.example.findus.di
 
 import android.content.Context
+import com.example.findus.camera.FotoArmazenamento
+import com.example.findus.data.enum.TipoUsuario
 import com.example.findus.data.local.AppDatabase
 import com.example.findus.data.local.entity.CentroDistribuicaoEntity
 import com.example.findus.data.local.entity.EntregaEntity
@@ -39,7 +41,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class AppContainer(context: Context) {
-    private val escopoApp = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    /** Escopo que vive enquanto o app vive (sincronização, simulações, gravações finais). */
+    val escopoApp = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private val database = AppDatabase.getInstance(context)
 
@@ -53,14 +56,16 @@ class AppContainer(context: Context) {
     private val gruposRemoto = FirestoreColecao("grupos_veiculos", GrupoVeiculoEntity::class.java)
     private val perimetrosRemoto = FirestoreColecao("perimetros", PerimetroEntity::class.java)
 
-    val veiculoRepository = VeiculoRepository(database.veiculoDao(), veiculosRemoto)
+    val fotoArmazenamento = FotoArmazenamento(context)
+
+    val veiculoRepository = VeiculoRepository(database.veiculoDao(), veiculosRemoto, fotoArmazenamento)
     val telemetriaRepository = TelemetriaRepository(database.registroTelemetriaDao(), telemetriasRemoto)
     val motoristaRepository = MotoristaRepository(database.motoristaDao(), motoristasRemoto)
     val centroRepository = CentroDistribuicaoRepository(database.centroDistribuicaoDao(), centrosRemoto)
     val entregaRepository = EntregaRepository(database.entregaDao(), entregasRemoto, veiculoRepository)
     val grupoRepository = GrupoVeiculoRepository(database.grupoVeiculoDao(), gruposRemoto)
     val perimetroRepository = PerimetroRepository(database.perimetroDao(), perimetrosRemoto)
-    val usuarioRepository = UsuarioRepository()
+    val usuarioRepository = UsuarioRepository(context)
 
     val locationHelper = LocationHelper(context)
     val reverseGeocoder = ReverseGeocoder()
@@ -80,6 +85,14 @@ class AppContainer(context: Context) {
 
     val geofenceNotificador = GeofenceNotificador(context.applicationContext)
 
+    /**
+     * Perfil da sessão atual, definido pela MainActivity. Só o controlador recebe as
+     * notificações de geofencing do sistema (o motorista vê os avisos dentro do app).
+     */
+    fun definirPerfilDaSessao(tipo: TipoUsuario?) {
+        geofenceNotificador.notificacoesDoSistemaAtivas = tipo == TipoUsuario.CONTROLADOR
+    }
+
     private val veiculosAtuais: StateFlow<List<VeiculoEntity>> = veiculoRepository.observarTodos()
         .stateIn(escopoApp, SharingStarted.Eagerly, emptyList())
 
@@ -95,13 +108,16 @@ class AppContainer(context: Context) {
     }.stateIn(escopoApp, SharingStarted.Eagerly, emptyList())
 
     init {
-        escopoApp.sincronizar(veiculosRemoto) { database.veiculoDao().inserirTodos(it) }
+        // Veículos passam pelo repositório: a foto em Base64 do Firestore vira arquivo local.
+        escopoApp.sincronizar(veiculosRemoto) { veiculoRepository.salvarDoRemoto(it) }
         escopoApp.sincronizar(motoristasRemoto) { database.motoristaDao().inserirTodos(it) }
         escopoApp.sincronizar(telemetriasRemoto) { database.registroTelemetriaDao().inserirTodos(it) }
         escopoApp.sincronizar(centrosRemoto) { database.centroDistribuicaoDao().inserirTodos(it) }
         escopoApp.sincronizar(entregasRemoto) { database.entregaDao().inserirTodos(it) }
         escopoApp.sincronizar(gruposRemoto) { database.grupoVeiculoDao().inserirTodos(it) }
         escopoApp.sincronizar(perimetrosRemoto) { database.perimetroDao().inserirTodos(it) }
+
+        escopoApp.launch { runCatching { telemetriaRepository.limparHistoricoLocal() } }
 
         escopoApp.launch {
             telemetriaRepository.observarUltimoPorVeiculo().collect { registros ->

@@ -46,7 +46,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.findus.FindUsApplication
-import com.example.findus.data.enum.EstadoPortas
 import com.example.findus.data.enum.rotulo
 import com.example.findus.data.local.entity.EntregaEntity
 import com.example.findus.data.local.entity.RegistroTelemetriaEntity
@@ -58,6 +57,7 @@ import com.example.findus.ui.map.CirculoMapa
 import com.example.findus.ui.map.MapaOsm
 import com.example.findus.ui.map.MarcadorMapa
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -131,7 +131,7 @@ fun MapaControladorScreen(onVoltar: () -> Unit, onVerRota: (String) -> Unit) {
                 MarcadorMapa(
                     posicao = Coordenada(registro.latitude, registro.longitude),
                     titulo = "${veiculo?.placa ?: "Veículo ${registro.veiculoId}"} · ${if (emTransito) "em trânsito" else "parado"}",
-                    descricao = "${registro.velocidade} km/h · ${registro.estadoPortas}",
+                    descricao = "${registro.velocidade.roundToInt()} km/h · portas ${registro.estadoPortas.rotulo()}",
                     corHex = if (emTransito) COR_EM_TRANSITO else COR_PARADO,
                     onClick = {
                         veiculoSelecionado = veiculo
@@ -205,7 +205,7 @@ private fun LinhaTelemetriaVeiculo(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                FotoVeiculo(veiculo.fotoBase64, Modifier.size(56.dp))
+                FotoVeiculo(veiculo.fotoArquivo, Modifier.size(56.dp))
                 Text("${veiculo.placa} · ${veiculo.modelo}", style = MaterialTheme.typography.titleMedium)
             }
             if (telemetria != null) {
@@ -216,13 +216,13 @@ private fun LinhaTelemetriaVeiculo(
                     color = corCompose(if (emTransito) COR_EM_TRANSITO else COR_PARADO)
                 )
                 Text(
-                    "Velocidade: ${telemetria.velocidade} km/h · Portas: ${if (telemetria.estadoPortas == EstadoPortas.ABERTA) "abertas" else "fechadas"} · Motor: ${if (telemetria.motorLigado) "ligado" else "desligado"}",
+                    "Velocidade: ${telemetria.velocidade.roundToInt()} km/h · Portas: ${telemetria.estadoPortas.rotulo()} · Motor: ${if (telemetria.motorLigado) "ligado" else "desligado"}",
                     style = MaterialTheme.typography.bodySmall
                 )
             } else {
                 Text("Sem telemetria recente", style = MaterialTheme.typography.bodySmall)
             }
-            Text("Status: ${veiculo.status}", style = MaterialTheme.typography.bodySmall)
+            Text("Status: ${veiculo.status.rotulo()}", style = MaterialTheme.typography.bodySmall)
             Text(
                 if (entrega != null) "Entrega: ${entrega.descricao} (${entrega.status.rotulo()})" else "Sem entrega atribuída",
                 style = MaterialTheme.typography.bodySmall

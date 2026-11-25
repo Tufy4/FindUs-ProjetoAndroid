@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.findus.location.Coordenada
 import com.example.findus.location.LocationHelper
 import com.example.findus.location.RotaService
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -27,15 +28,24 @@ class RotaEntregaViewModel(
     private val _rota = MutableStateFlow<List<Coordenada>>(emptyList())
     val rota: StateFlow<List<Coordenada>> = _rota
 
+    private var calculoRota: Job? = null
+
     fun atualizarLocalizacaoAtual() = viewModelScope.launch {
         val origem = locationHelper.obterLocalizacaoOuPadrao()
         _posicaoAtual.value = origem
-        _destino.value?.let { _rota.value = rotaService.rota(origem, it) }
+        _destino.value?.let { calcularRota(origem, it) }
     }
 
-    fun definirDestino(coordenada: Coordenada) = viewModelScope.launch {
+    fun definirDestino(coordenada: Coordenada) {
         _destino.value = coordenada
-        val origem = _posicaoAtual.value ?: return@launch
-        _rota.value = rotaService.rota(origem, coordenada)
+        val origem = _posicaoAtual.value ?: return
+        calcularRota(origem, coordenada)
+    }
+
+    // Cancela o cálculo anterior: com toques rápidos no mapa, uma resposta antiga podia
+    // chegar por último e desenhar a rota para o destino errado.
+    private fun calcularRota(origem: Coordenada, destino: Coordenada) {
+        calculoRota?.cancel()
+        calculoRota = viewModelScope.launch { _rota.value = rotaService.rota(origem, destino) }
     }
 }

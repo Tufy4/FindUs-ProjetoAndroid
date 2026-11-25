@@ -51,8 +51,10 @@ fun RotaVeiculoScreen(veiculoId: String, onVoltar: () -> Unit) {
     val posicaoControlador by viewModel.posicaoControlador.collectAsStateWithLifecycle()
     val rota by viewModel.rota.collectAsStateWithLifecycle()
 
-    val lancadorPermissao = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedida ->
-        if (concedida) viewModel.atualizarLocalizacaoControlador()
+    // Mesmo comportamento da tela do motorista: sem permissão usa a posição padrão da região.
+    // Antes, negando a permissão a rota nunca aparecia e nenhuma mensagem explicava o motivo.
+    val lancadorPermissao = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        viewModel.atualizarLocalizacaoControlador()
     }
     LaunchedEffect(Unit) { lancadorPermissao.launch(Manifest.permission.ACCESS_FINE_LOCATION) }
 

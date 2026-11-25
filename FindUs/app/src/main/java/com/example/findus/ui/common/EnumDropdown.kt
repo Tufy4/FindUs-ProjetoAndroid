@@ -20,21 +20,24 @@ fun <T : Enum<T>> EnumDropdown(
     opcoes: Array<T>,
     selecionado: T,
     onSelecionar: (T) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    rotulo: (T) -> String = { it.name },
+    habilitado: Boolean = true
 ) {
     var expandido by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(expanded = expandido, onExpandedChange = { expandido = it }, modifier = modifier) {
+    ExposedDropdownMenuBox(expanded = expandido, onExpandedChange = { expandido = habilitado && it }, modifier = modifier) {
         OutlinedTextField(
-            value = selecionado.name,
+            value = rotulo(selecionado),
             onValueChange = {},
             readOnly = true,
+            enabled = habilitado,
             label = { Text(label) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandido) },
             modifier = Modifier.menuAnchor().fillMaxWidth()
         )
         ExposedDropdownMenu(expanded = expandido, onDismissRequest = { expandido = false }) {
             opcoes.forEach { opcao ->
-                DropdownMenuItem(text = { Text(opcao.name) }, onClick = {
+                DropdownMenuItem(text = { Text(rotulo(opcao)) }, onClick = {
                     onSelecionar(opcao)
                     expandido = false
                 })

@@ -28,6 +28,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.findus.FindUsApplication
+import com.example.findus.data.enum.rotulo
 import com.example.findus.data.local.entity.GrupoVeiculoEntity
 import com.example.findus.ui.common.MensagemErro
 import com.example.findus.ui.common.TelaCadastro
@@ -94,7 +95,7 @@ fun GruposVeiculosScreen(onVoltar: () -> Unit) {
                             checked = marcado,
                             onCheckedChange = { selecionados = if (it) selecionados + veiculo.id else selecionados - veiculo.id }
                         )
-                        Text("${veiculo.placa} · ${veiculo.modelo} (${veiculo.tipo})")
+                        Text("${veiculo.placa} · ${veiculo.modelo} (${veiculo.tipo.rotulo()})")
                     }
                 }
             }

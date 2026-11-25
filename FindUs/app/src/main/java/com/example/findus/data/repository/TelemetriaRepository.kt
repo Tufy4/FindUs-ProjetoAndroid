@@ -19,4 +19,8 @@ class TelemetriaRepository(
 
     fun observarUltimoPorVeiculo(): Flow<List<RegistroTelemetriaEntity>> =
         dao.observarUltimoPorVeiculo()
+
+    /** Mantém só as últimas [horas] de histórico local (o último registro de cada veículo nunca é apagado). */
+    suspend fun limparHistoricoLocal(horas: Int = 24): Int =
+        dao.apagarHistoricoAnteriorA(System.currentTimeMillis() - horas * 3_600_000L)
 }

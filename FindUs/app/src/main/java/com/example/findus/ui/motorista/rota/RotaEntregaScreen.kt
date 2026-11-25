@@ -5,7 +5,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -34,7 +36,11 @@ import com.example.findus.ui.map.MarcadorMapa
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RotaEntregaScreen(onVoltar: () -> Unit, destinoEntrega: Coordenada? = null) {
+fun RotaEntregaScreen(
+    onVoltar: () -> Unit,
+    destinoEntrega: Coordenada? = null,
+    onSimularPercurso: (Coordenada) -> Unit = {}
+) {
     val context = LocalContext.current
     val app = context.applicationContext as FindUsApplication
     val viewModel: RotaEntregaViewModel = viewModel(factory = viewModelFactory {
@@ -73,7 +79,8 @@ fun RotaEntregaScreen(onVoltar: () -> Unit, destinoEntrega: Coordenada? = null) 
                 onToqueMapa = if (destinoFixo) null else escolherDestino
             )
 
-            if (destino == null) {
+            val alvo = destino
+            if (alvo == null) {
                 Surface(
                     modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
                     tonalElevation = 4.dp
@@ -82,6 +89,11 @@ fun RotaEntregaScreen(onVoltar: () -> Unit, destinoEntrega: Coordenada? = null) 
                         Text("Toque no mapa para escolher o destino da rota", style = MaterialTheme.typography.bodyMedium)
                     }
                 }
+            } else if (rota.size >= 2) {
+                Button(
+                    onClick = { onSimularPercurso(alvo) },
+                    modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(16.dp)
+                ) { Text("Simular percurso (visão do motorista)") }
             }
         }
     }

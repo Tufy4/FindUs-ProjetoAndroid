@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +34,7 @@ import com.example.findus.FindUsApplication
 import com.example.findus.data.enum.StatusEntrega
 import com.example.findus.data.enum.rotulo
 import com.example.findus.data.local.entity.EntregaEntity
+import com.example.findus.domain.RegrasNegocio
 import com.example.findus.location.Coordenada
 import com.example.findus.ui.common.MensagemErro
 import com.example.findus.ui.common.descreverLocal
@@ -40,7 +42,11 @@ import com.example.findus.ui.common.formatarDataHora
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MinhasEntregasScreen(onVoltar: () -> Unit, onVerRota: (Coordenada) -> Unit) {
+fun MinhasEntregasScreen(
+    onVoltar: () -> Unit,
+    onVerRota: (Coordenada) -> Unit,
+    onSimularPercurso: (String) -> Unit
+) {
     val app = LocalContext.current.applicationContext as FindUsApplication
     val viewModel: MinhasEntregasViewModel = viewModel(factory = viewModelFactory {
         initializer {
@@ -89,7 +95,8 @@ fun MinhasEntregasScreen(onVoltar: () -> Unit, onVerRota: (Coordenada) -> Unit) 
                     nomeDoCentro = { id -> centros.find { it.id == id }?.nome },
                     onIniciar = { viewModel.iniciar(it) },
                     onConcluir = { viewModel.concluir(it) },
-                    onVerRota = onVerRota
+                    onVerRota = onVerRota,
+                    onSimularPercurso = onSimularPercurso
                 )
             }
         }
@@ -105,7 +112,8 @@ private fun ConteudoMinhasEntregas(
     nomeDoCentro: (String) -> String?,
     onIniciar: (EntregaEntity) -> Unit,
     onConcluir: (EntregaEntity) -> Unit,
-    onVerRota: (Coordenada) -> Unit
+    onVerRota: (Coordenada) -> Unit,
+    onSimularPercurso: (String) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
@@ -147,6 +155,12 @@ private fun ConteudoMinhasEntregas(
                                 }
                                 else -> Unit
                             }
+                        }
+                        if (RegrasNegocio.entregaAtiva(entrega)) {
+                            FilledTonalButton(
+                                onClick = { onSimularPercurso(entrega.id) },
+                                modifier = Modifier.fillMaxWidth()
+                            ) { Text("Simular percurso (visão do motorista)") }
                         }
                     }
                 }

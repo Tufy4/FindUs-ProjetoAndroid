@@ -1,27 +1,36 @@
 package com.example.findus.ui.common
 
 import android.graphics.BitmapFactory
-import android.util.Base64
 import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import com.example.findus.camera.arquivoDaFoto
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
+/** Foto do veículo lida do arquivo local (decodificada fora da thread principal). */
 @Composable
-fun FotoVeiculo(fotoBase64: String?, modifier: Modifier = Modifier) {
-    if (fotoBase64 == null) return
-    val miniatura = remember(fotoBase64) {
-        runCatching {
-            val bytes = Base64.decode(fotoBase64, Base64.NO_WRAP)
-            BitmapFactory.decodeByteArray(bytes, 0, bytes.size).asImageBitmap()
-        }.getOrNull()
-    } ?: return
+fun FotoVeiculo(fotoArquivo: String?, modifier: Modifier = Modifier) {
+    if (fotoArquivo == null) return
+    val context = LocalContext.current
+    val miniatura by produceState<ImageBitmap?>(initialValue = null, fotoArquivo) {
+        value = withContext(Dispatchers.IO) {
+            runCatching {
+                BitmapFactory.decodeFile(arquivoDaFoto(context, fotoArquivo).absolutePath)?.asImageBitmap()
+            }.getOrNull()
+        }
+    }
+    val imagem = miniatura ?: return
 
     Image(
-        bitmap = miniatura,
+        bitmap = imagem,
         contentDescription = null,
         contentScale = ContentScale.Crop,
         modifier = modifier.clipToBounds()

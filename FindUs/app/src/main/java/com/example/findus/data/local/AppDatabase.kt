@@ -30,7 +30,8 @@ import com.example.findus.data.local.entity.VeiculoEntity
         GrupoVeiculoEntity::class,
         PerimetroEntity::class
     ],
-    version = 8,
+    // 9: veiculos.fotoArquivo (foto no filesystem em vez de Base64 no SQLite).
+    version = 9,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

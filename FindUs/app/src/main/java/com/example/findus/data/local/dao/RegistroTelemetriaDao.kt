@@ -29,4 +29,24 @@ interface RegistroTelemetriaDao {
         """
     )
     fun observarUltimoPorVeiculo(): Flow<List<RegistroTelemetriaEntity>>
+
+    /**
+     * Apaga o histórico antigo, preservando sempre o último registro de cada veículo
+     * (senão o veículo parado há muito tempo sumiria do mapa). Sem isso a tabela crescia
+     * sem limite (um registro a cada 2 s por veículo simulado) e a consulta acima ficava lenta.
+     */
+    @Query(
+        """
+        DELETE FROM registros_telemetria
+        WHERE timestamp < :limite AND id NOT IN (
+            SELECT t.id FROM registros_telemetria t
+            INNER JOIN (
+                SELECT veiculoId, MAX(timestamp) AS maxTs
+                FROM registros_telemetria
+                GROUP BY veiculoId
+            ) ultimo ON t.veiculoId = ultimo.veiculoId AND t.timestamp = ultimo.maxTs
+        )
+        """
+    )
+    suspend fun apagarHistoricoAnteriorA(limite: Long): Int
 }

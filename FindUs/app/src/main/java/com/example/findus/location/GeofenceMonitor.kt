@@ -6,11 +6,6 @@ import com.example.findus.data.local.entity.EntregaEntity
 import com.example.findus.data.local.entity.GrupoVeiculoEntity
 import com.example.findus.data.local.entity.PerimetroEntity
 import com.example.findus.domain.RegrasNegocio
-import kotlin.math.asin
-import kotlin.math.cos
-import kotlin.math.pow
-import kotlin.math.sin
-import kotlin.math.sqrt
 
 enum class TipoEventoGeofence { ENTROU, SAIU }
 
@@ -132,14 +127,4 @@ fun montarPerimetros(
     }
 
     return doCentros + dasEntregas + personalizados
-}
-
-/** Distância em metros entre duas coordenadas (fórmula de Haversine). */
-fun distanciaMetros(a: Coordenada, b: Coordenada): Double {
-    val raioTerra = 6_371_000.0
-    val dLat = Math.toRadians(b.latitude - a.latitude)
-    val dLon = Math.toRadians(b.longitude - a.longitude)
-    val h = sin(dLat / 2).pow(2) +
-        cos(Math.toRadians(a.latitude)) * cos(Math.toRadians(b.latitude)) * sin(dLon / 2).pow(2)
-    return 2 * raioTerra * asin(sqrt(h))
 }

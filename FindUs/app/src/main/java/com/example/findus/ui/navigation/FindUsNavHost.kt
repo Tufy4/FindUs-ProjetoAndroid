@@ -20,6 +20,7 @@ import com.example.findus.ui.controlador.rota.RotaVeiculoScreen
 import com.example.findus.ui.motorista.MotoristaHomeScreen
 import com.example.findus.ui.motorista.entregas.MinhasEntregasScreen
 import com.example.findus.ui.motorista.rota.RotaEntregaScreen
+import com.example.findus.ui.motorista.simulacao.SimulacaoPercursoScreen
 import com.example.findus.ui.motorista.veiculo.CadastroVeiculoScreen
 
 private object Rotas {
@@ -32,6 +33,11 @@ private object Rotas {
     const val MOTORISTA_ROTA = "motorista_rota?lat={lat}&lon={lon}"
     const val MOTORISTA_ROTA_LIVRE = "motorista_rota"
     fun motoristaRotaAte(destino: Coordenada) = "motorista_rota?lat=${destino.latitude}&lon=${destino.longitude}"
+
+    // Simulação do percurso na visão do motorista: por entrega (sai do centro) ou até um ponto (sai da posição atual).
+    const val MOTORISTA_SIMULACAO = "motorista_simulacao?entregaId={entregaId}&lat={lat}&lon={lon}"
+    fun motoristaSimulacaoDaEntrega(entregaId: String) = "motorista_simulacao?entregaId=$entregaId"
+    fun motoristaSimulacaoAte(destino: Coordenada) = "motorista_simulacao?lat=${destino.latitude}&lon=${destino.longitude}"
 
     const val CONTROLADOR_HOME = "controlador_home"
     const val CONTROLADOR_MAPA = "controlador_mapa"
@@ -93,7 +99,8 @@ fun FindUsNavHost(
         composable(Rotas.MOTORISTA_ENTREGAS) {
             MinhasEntregasScreen(
                 onVoltar = { navController.popBackStack() },
-                onVerRota = { destino -> navController.navigate(Rotas.motoristaRotaAte(destino)) }
+                onVerRota = { destino -> navController.navigate(Rotas.motoristaRotaAte(destino)) },
+                onSimularPercurso = { entregaId -> navController.navigate(Rotas.motoristaSimulacaoDaEntrega(entregaId)) }
             )
         }
         composable(
@@ -114,7 +121,41 @@ fun FindUsNavHost(
             val latitude = backStackEntry.arguments?.getString("lat")?.toDoubleOrNull()
             val longitude = backStackEntry.arguments?.getString("lon")?.toDoubleOrNull()
             val destino = if (latitude != null && longitude != null) Coordenada(latitude, longitude) else null
-            RotaEntregaScreen(onVoltar = { navController.popBackStack() }, destinoEntrega = destino)
+            RotaEntregaScreen(
+                onVoltar = { navController.popBackStack() },
+                destinoEntrega = destino,
+                onSimularPercurso = { alvo -> navController.navigate(Rotas.motoristaSimulacaoAte(alvo)) }
+            )
+        }
+        composable(
+            Rotas.MOTORISTA_SIMULACAO,
+            arguments = listOf(
+                navArgument("entregaId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
+                navArgument("lat") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
+                navArgument("lon") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            val entregaId = backStackEntry.arguments?.getString("entregaId")
+            val latitude = backStackEntry.arguments?.getString("lat")?.toDoubleOrNull()
+            val longitude = backStackEntry.arguments?.getString("lon")?.toDoubleOrNull()
+            val destino = if (latitude != null && longitude != null) Coordenada(latitude, longitude) else null
+            SimulacaoPercursoScreen(
+                entregaId = entregaId,
+                destinoLivre = destino,
+                onVoltar = { navController.popBackStack() }
+            )
         }
 
         composable(Rotas.CONTROLADOR_HOME) {
